@@ -30,6 +30,7 @@ import javax.swing.border.TitledBorder;
 import javax.swing.filechooser.FileFilter;
 
 
+@SuppressWarnings("serial")
 public class GatkUi extends AbstractGatkPrograms
 	{
 	
@@ -38,7 +39,27 @@ public class GatkUi extends AbstractGatkPrograms
 		}
 	
 	
-	
+	@Override
+	protected void buildTabbedPane(JTabbedPane tabbedPane) {
+		
+		super.buildTabbedPane(tabbedPane);
+		JPanel pane=new JPanel(new MyLayout());
+		for(int i=0;i< 10;++i)
+		{
+			pane.add(new JLabel(""+i));
+			if(i%2==0)
+				{
+				pane.add(new JTextField(""+i));
+				}
+			else
+				{
+				JScrollPane p=new JScrollPane(new JTextArea(""+i));
+				p.setPreferredSize(new Dimension(300,100));
+				pane.add(p);
+				}
+		}
+		tabbedPane.addTab("test", pane);
+	}
 	
 	public static void main(String[] args)
 		{

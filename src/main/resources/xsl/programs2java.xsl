@@ -109,7 +109,7 @@ private class <xsl:value-of select="concat(@name,'Pane')"/> extends AbstracComma
 	@Override
 	public void savePreferences()
 		{
-		
+		<xsl:apply-templates select="options/option" mode="save.prefs" />
 		}
 	}
 
@@ -157,6 +157,7 @@ private class <xsl:value-of select="concat(@name,'Pane')"/> extends AbstracComma
 <xsl:template match="option">
 
 /* BEGIN <xsl:value-of select="@label"/> */
+{
 	<xsl:choose>
 		<xsl:when test="@type='input-files'">
 			this.<xsl:value-of select="generate-id(.)"/> = new MultipleFileChooser("<xsl:value-of select="@label"/>");
@@ -166,11 +167,18 @@ private class <xsl:value-of select="concat(@name,'Pane')"/> extends AbstracComma
 		<xsl:when test="@type='input-file'">
 			this.<xsl:value-of select="generate-id(.)"/> = new InputFileChooser("<xsl:value-of select="@label"/>");
 			pane.add(this.<xsl:value-of select="generate-id(.)"/>);
+			
+			String path=	preferences.get(<xsl:apply-templates select="." mode="prefs.key"/>,null);
+			if(path!=null) this.<xsl:value-of select="generate-id(.)"/>.setFile(new File(path));
+
+			
 			<xsl:apply-templates select="filter"/>
 		</xsl:when>
 		<xsl:when test="@type='output-file'">
 			this.<xsl:value-of select="generate-id(.)"/> = new OutputFileChooser("<xsl:value-of select="@label"/>");
 			pane.add(this.<xsl:value-of select="generate-id(.)"/>);
+			String path=	preferences.get(<xsl:apply-templates select="." mode="prefs.key"/>,null);
+			if(path!=null) this.<xsl:value-of select="generate-id(.)"/>.setFile(new File(path));
 			<xsl:apply-templates select="filter"/>
 		</xsl:when>
 		<xsl:when test="@type='boolean'">
@@ -213,6 +221,9 @@ private class <xsl:value-of select="concat(@name,'Pane')"/> extends AbstracComma
 			this.<xsl:value-of select="generate-id(.)"/>.setText("<xsl:value-of select="@default"/>");
 			</xsl:if>
 			
+			String val = preferences.get(<xsl:apply-templates select="." mode="prefs.key"/>,null);
+			if(val!=null) this.<xsl:value-of select="generate-id(.)"/>.setText(val);
+			
 			pane.add(this.<xsl:value-of select="generate-id(.)"/>);
 			<xsl:apply-templates select="filter"/>
 		</xsl:when>
@@ -220,7 +231,7 @@ private class <xsl:value-of select="concat(@name,'Pane')"/> extends AbstracComma
 			<xsl:message>option unknow <xsl:value-of select="@type"/></xsl:message>
 		</xsl:otherwise>
 	</xsl:choose>
-
+}
 /* END <xsl:value-of select="@label"/> */
 
 </xsl:template>
@@ -356,7 +367,49 @@ private class <xsl:value-of select="concat(@name,'Pane')"/> extends AbstracComma
 	</xsl:choose>
 </xsl:template>
 
+<xsl:template match="option" mode="save.prefs">
+	<xsl:choose>
+		<xsl:when test="@type='input-files'">
+				
+		</xsl:when>
+		<xsl:when test="@type='input-file' or @type='output-file'">
+				if(this.<xsl:value-of select="generate-id(.)"/>.getFile()==null)
+					{
+					preferences.remove(<xsl:apply-templates select="." mode="prefs.key"/>);
+					}
+				else
+					{
+					preferences.put(
+								<xsl:apply-templates select="." mode="prefs.key"/>,
+								this.<xsl:value-of select="generate-id(.)"/>.getFile().getPath()
+								);
+					}
+		</xsl:when>
+		<xsl:when test="@type='int'">
+				if(this.<xsl:value-of select="generate-id(.)"/>.getText().trim().isEmpty())
+					{
+					preferences.remove(<xsl:apply-templates select="." mode="prefs.key"/>);
+					}
+				else
+					{
+					preferences.put(
+								<xsl:apply-templates select="." mode="prefs.key"/>,
+								this.<xsl:value-of select="generate-id(.)"/>.getText().trim()
+								);
+					}
+		</xsl:when>		
+		<xsl:otherwise>
+			<xsl:message>save.prefs:declare unknow <xsl:value-of select="@type"/></xsl:message>
+		</xsl:otherwise>
+	</xsl:choose>
+</xsl:template>
 
+
+<xsl:template match="option" mode="prefs.key">
+<xsl:text>"</xsl:text>
+<xsl:value-of select="concat(../../@name,'.',translate(@opt,'-',''))"/>
+<xsl:text>"</xsl:text>
+</xsl:template>
 
 <xsl:template match="filter">
 this.<xsl:value-of select="generate-id(..)"/>.setFilter(new javax.swing.filechooser.FileFilter() {
