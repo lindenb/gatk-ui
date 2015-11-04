@@ -6,3 +6,5 @@ src/main/generated-code/
 dist
 .classpath
 .project
+local.mk
+GenomeAnalysisTK.jar

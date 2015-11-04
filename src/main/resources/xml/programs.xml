@@ -18,11 +18,11 @@
 					<extension indexed="true">bam</extension>
 					<extension>list</extension>
 				</filter>
-			</option>	
+			</option>
 			<option opt="o" label="Output" type="output-file" required="true">
 				<description>Base output</description>
 			</option>
-			<option opt="-countType" label="Output" type="enum" required="true" enum-class="org.broadinstitute.gatk.tools.walkers.coverage.CoverageUtils.CountPileupType">
+			<option opt="-countType" label="Count Type" type="enum" required="true" enum-class="org.broadinstitute.gatk.tools.walkers.coverage.CoverageUtils.CountPileupType">
 				<description>How should overlapping reads from the same fragment be handled?</description>
 			</option>
 			<option opt="-maxBaseQuality" label="Max base Quality" type="int" required="false" min-inclusive="0" max-inclusive="127">
@@ -31,5 +31,75 @@
 		</options>
 	</program>
 
+	<!-- =================================================================================== -->
+	<!-- =================================================================================== -->
+	<!-- =================================================================================== -->
 
+	<program name="SelectVariants">
+		<description>Select a subset of variants from a larger callset</description>
+		<options>
+			<option opt="-variant" label="Variants" type="input-file" required="true">
+				<description>Input VCF file</description>
+				<filter label="VCF">
+					<extension>vcf</extension>
+					<extension>vcf.gz</extension>
+				</filter>
+			</option>
+		
+			<option opt="-selectexpressions" label="Select Expression" type="string" required="false">
+				<description>One or more criteria to use when selecting the data. See GATK doc</description>
+			</option>
+			
+			<option opt="-excludeNonVariants" label="Exclude Non Variants" type="boolean" default="false">
+				<description>Don't include non-variant sites</description>
+			</option>
+			
+			<option opt="-invertMendelianViolation" label="invert Mendelian Violation" type="boolean" default="false">
+				<description>Output non-mendelian violation sites only</description>
+			</option>
+			
+			<option opt="-invertselect" label="invert selection" type="boolean" default="false">
+				<description>Invert the selection criteria for select</description>
+			</option>
+			
+			<option opt="-maxIndelSize" label="Max Indel Size" type="int" required="false" min-inclusive="0">
+				<description> Maximum size of indels to include</description>
+			</option>
+			
+			<option opt="o" label="Output" type="output-file" required="true">
+				<description>File to which variants should be written</description>
+				<extension>vcf</extension>
+			</option>
+		</options>
+	</program>
+	
+		<!-- =================================================================================== -->
+	<!-- =================================================================================== -->
+	<!-- =================================================================================== -->
+
+	<program name="PhaseByTransmission">
+		<description>Compute the most likely genotype combination and phasing for trios and parent/child pairs</description>
+		<options>
+			<option opt="-variant" label="Variants" type="input-file" required="true">
+				<description>Input VCF file</description>
+				<filter label="VCF">
+					<extension>vcf</extension>
+					<extension>vcf.gz</extension>
+				</filter>
+			</option>
+
+			<option opt="-FatherAlleleFirst" label="Father Allele First" type="boolean" default="false">
+				<description>Ouputs the father allele as the first allele in phased child genotype. i.e. father|mother rather than mother|father.</description>
+			</option>
+			<option opt="-MendelianViolationsFile" label="Mendelian Violations File" type="output-file" required="false">
+				<description>File to output the mendelian violation details</description>
+			</option>
+			<option opt="o" label="Output" type="output-file" required="true">
+				<description>File to which variants should be written</description>
+				<extension>vcf</extension>
+			</option>
+		</options>
+	</program>	
+	
+	
 </programs>

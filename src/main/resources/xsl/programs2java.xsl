@@ -5,7 +5,7 @@
 	version='1.0'>
 
 <xsl:output method="text" />
-
+<xsl:param name="outdir"/>
 
 <xsl:template match="/">
 <xsl:apply-templates select="programs"/>
@@ -15,6 +15,7 @@
 package com.github.lindenb.gatkui;
 
 import javax.swing.*;
+import javax.swing.text.*;
 import java.awt.*;
 import javax.swing.border.TitledBorder;
 import javax.annotation.Generated;
@@ -33,10 +34,28 @@ public abstract class AbstractGatkPrograms extends AbstractGatkUi
 	protected void buildTabbedPane(final JTabbedPane tabbedPane)
 		{
 		super.buildTabbedPane(tabbedPane);
+		AbstractAction action=null;
 		<xsl:for-each select="program">
+		
+		final int <xsl:value-of select="generate-id(.)"/>idx=  tabbedPane.getTabCount();
+		
 		tabbedPane.addTab("<xsl:value-of select="@name"/>",
-			(this.<xsl:value-of select="concat('_instance',@name)"/> = new <xsl:value-of select="concat(@name,'Pane')"/>())
+			(this.<xsl:value-of select="concat('_instance',@name)"/> = new <xsl:value-of select="concat(@name,'Pane')"/>(this))
 			);
+		
+		action  = new AbstractAction("<xsl:value-of select="@name"/>")
+			{
+			@Override
+			public void actionPerformed(final java.awt.event.ActionEvent evt)
+				{
+				tabbedPane.setSelectedIndex(<xsl:value-of select="generate-id(.)"/>idx);
+				}
+			};
+		action.putValue(AbstractAction.SHORT_DESCRIPTION,this.<xsl:value-of select="concat('_instance',@name)"/>.getDescription());
+		
+		this.engineMenu.add(new JMenuItem(action));
+	
+			
 		</xsl:for-each>
 		}
 	@Override
@@ -53,36 +72,63 @@ public abstract class AbstractGatkPrograms extends AbstractGatkUi
 
 
 <xsl:template match="program" mode="declare">
-protected <xsl:value-of select="concat(@name,'Pane _instance',@name)"/> = null;
+protected <xsl:value-of select="concat(@name,'Pane _instance',@name)"/>;
 </xsl:template>
 
 <xsl:template match="program" mode="prefs">
-if(this.<xsl:value-of select="concat('_instance',@name)"/>!=null)
-	{
-	this.<xsl:value-of select="concat('_instance',@name)"/>.savePreferences();
-	}
+this.<xsl:value-of select="concat('_instance',@name)"/>.savePreferences();
 </xsl:template>
 
 <xsl:template match="program" >
+<xsl:variable name="filename" select="concat($outdir,'/',@name,'Pane.java')"/>
+<xsl:document href="{$filename}" method="text">
+package com.github.lindenb.gatkui;
+
+import javax.swing.*;
+import javax.swing.text.*;
+import java.awt.*;
+import javax.swing.border.TitledBorder;
+import javax.annotation.Generated;
+import java.io.*;
+import java.util.*;
+import com.github.lindenb.gatkui.AbstractGatkUi.MultipleFileChooser;
+import com.github.lindenb.gatkui.AbstractGatkUi.InputFileChooser;
+import com.github.lindenb.gatkui.AbstractGatkUi.OutputFileChooser;
+
+@Generated("xslt")
+@SuppressWarnings("serial")
 /** class Pane for command "<xsl:value-of select="@name"/>" */
-private class <xsl:value-of select="concat(@name,'Pane')"/> extends AbstracCommandPane
+public class <xsl:value-of select="concat(@name,'Pane')"/> extends AbstractGatkUi.AbstracCommandPane
 	{
 	<xsl:apply-templates select="options/option" mode="declare"/>
-	<xsl:value-of select="concat(@name,'Pane')"/>()
+	<xsl:value-of select="concat(@name,'Pane')"/>(AbstractGatkUi owner)
 		{
-		this.setBorder(new TitledBorder("<xsl:value-of select="@name"/>"));
+		super(owner);
+		java.util.prefs.Preferences preferences = owner.getPreferences();
+		this.setBorder(new javax.swing.border.EmptyBorder(5,5,5,5));
 	
 		JPanel top = new JPanel(new BorderLayout(5,5));
-		JLabel lbl = new JLabel("<xsl:apply-templates select="description"/>");
+		top.setBorder(new javax.swing.border.EmptyBorder(5,5,5,5));
+		top.setFont(new Font("Dialog",Font.BOLD,18));
+
+
+		
+		JLabel lbl = new JLabel(getDescription());
+		lbl.setFont(new Font("Dialog",Font.BOLD,18));
 		top.add(lbl,BorderLayout.CENTER);
 		this.add(top,BorderLayout.NORTH);
 		
 		
-		JPanel pane = new JPanel();
-		pane.setLayout(new BoxLayout(pane, BoxLayout.PAGE_AXIS));
+		JPanel pane = new JPanel(new AbstractGatkUi.MyLayout());
 		this.add(pane,BorderLayout.CENTER);
 		
 		<xsl:apply-templates select="options/option" />
+		}
+	
+	@Override
+	public String getDescription()
+		{
+		return  "<xsl:value-of select="description"/>";
 		}
 	
 	@Override
@@ -112,7 +158,7 @@ private class <xsl:value-of select="concat(@name,'Pane')"/> extends AbstracComma
 		<xsl:apply-templates select="options/option" mode="save.prefs" />
 		}
 	}
-
+</xsl:document>
 </xsl:template>
 
 <xsl:template match="option" mode="declare">
@@ -129,24 +175,14 @@ private class <xsl:value-of select="concat(@name,'Pane')"/> extends AbstracComma
 		<xsl:when test="@type='boolean'">
 			JCheckBox <xsl:value-of select="generate-id(.)"/> = null;
 		</xsl:when>
-		<xsl:when test="@type='enum'">
-				<xsl:choose>
-				<xsl:when test="@enum-class">
-				JComboBox&lt;<xsl:value-of select="@enum-class"/>&gt; <xsl:value-of select="generate-id(.)"/> = null;
-				</xsl:when>
-				<xsl:otherwise>
-				enum <xsl:value-of select="generate-id(.)"/>E {
-					<xsl:for-each select="item">
-						<xsl:if test="position()&gt;1">,</xsl:if>
-						<xsl:value-of select="text()"/>
-					</xsl:for-each>
-					};
-				JComboBox&lt; <xsl:value-of select="generate-id(.)"/>E &gt; <xsl:value-of select="generate-id(.)"/> = null;
-				</xsl:otherwise>
-			</xsl:choose>
+		<xsl:when test="@type='enum' ">
+			JComboBox&lt;String&gt; <xsl:value-of select="generate-id(.)"/> = null;
 		</xsl:when>
 		<xsl:when test="@type='int'">
 			JTextField <xsl:value-of select="generate-id(.)"/> = null;
+		</xsl:when>
+		<xsl:when test="@type='string'">
+			JTextComponent <xsl:value-of select="generate-id(.)"/> = null;
 		</xsl:when>
 		<xsl:otherwise>
 			<xsl:message>option:declare unknow <xsl:value-of select="@type"/></xsl:message>
@@ -158,32 +194,40 @@ private class <xsl:value-of select="concat(@name,'Pane')"/> extends AbstracComma
 
 /* BEGIN <xsl:value-of select="@label"/> */
 {
+	JLabel label = <xsl:choose>
+			<xsl:when test="@type='boolean'">new JLabel("");</xsl:when>
+			<xsl:otherwise>new JLabel("<xsl:value-of select="@label"/> :",JLabel.TRAILING);</xsl:otherwise>
+		</xsl:choose>
+	<xsl:if test="@required='true'">
+	label.setForeground(Color.RED);
+	</xsl:if>
+	label.setToolTipText("<xsl:apply-templates select="description"/>");
+	pane.add(label);
+	
 	<xsl:choose>
 		<xsl:when test="@type='input-files'">
-			this.<xsl:value-of select="generate-id(.)"/> = new MultipleFileChooser("<xsl:value-of select="@label"/>");
+			this.<xsl:value-of select="generate-id(.)"/> = new MultipleFileChooser();
 			pane.add(this.<xsl:value-of select="generate-id(.)"/>);
+			owner.loadPreference(this.<xsl:value-of select="generate-id(.)"/>, <xsl:apply-templates select="." mode="prefs.key"/>);			
 			<xsl:apply-templates select="filter"/>
 		</xsl:when>
 		<xsl:when test="@type='input-file'">
-			this.<xsl:value-of select="generate-id(.)"/> = new InputFileChooser("<xsl:value-of select="@label"/>");
+			this.<xsl:value-of select="generate-id(.)"/> = new InputFileChooser();
 			pane.add(this.<xsl:value-of select="generate-id(.)"/>);
-			
-			String path=	preferences.get(<xsl:apply-templates select="." mode="prefs.key"/>,null);
-			if(path!=null) this.<xsl:value-of select="generate-id(.)"/>.setFile(new File(path));
-
+			owner.loadPreference(this.<xsl:value-of select="generate-id(.)"/>, <xsl:apply-templates select="." mode="prefs.key"/>);
 			
 			<xsl:apply-templates select="filter"/>
 		</xsl:when>
 		<xsl:when test="@type='output-file'">
-			this.<xsl:value-of select="generate-id(.)"/> = new OutputFileChooser("<xsl:value-of select="@label"/>");
+			this.<xsl:value-of select="generate-id(.)"/> = new OutputFileChooser();
 			pane.add(this.<xsl:value-of select="generate-id(.)"/>);
-			String path=	preferences.get(<xsl:apply-templates select="." mode="prefs.key"/>,null);
-			if(path!=null) this.<xsl:value-of select="generate-id(.)"/>.setFile(new File(path));
+			owner.loadPreference(this.<xsl:value-of select="generate-id(.)"/>, <xsl:apply-templates select="." mode="prefs.key"/>);
 			<xsl:apply-templates select="filter"/>
 		</xsl:when>
 		<xsl:when test="@type='boolean'">
 			<xsl:value-of select="generate-id(.)"/> = new JCheckBox("<xsl:value-of select="@label"/>");
 			<xsl:value-of select="generate-id(.)"/>.setToolTipText("<xsl:apply-templates select="description"/>");
+			label.setLabelFor(<xsl:value-of select="generate-id(.)"/>);
 			<xsl:choose>
 				<xsl:when test="@default='true'">
 					<xsl:value-of select="generate-id(.)"/>.setSelected(true);
@@ -195,22 +239,29 @@ private class <xsl:value-of select="concat(@name,'Pane')"/> extends AbstracComma
 					<xsl:message terminate="yes">boolean missing default</xsl:message>
 				</xsl:otherwise>
 			</xsl:choose>
+			owner.loadPreference(this.<xsl:value-of select="generate-id(.)"/>, <xsl:apply-templates select="." mode="prefs.key"/>);
 			pane.add(this.<xsl:value-of select="generate-id(.)"/>);
 			<xsl:apply-templates select="filter"/>
 		</xsl:when>
 		<xsl:when test="@type='enum'">
-			<xsl:choose>
-				<xsl:when test="@enum-class">
-					<xsl:value-of select="generate-id(.)"/> = new JComboBox(<xsl:value-of select="@enum-class"/>.values());
-				</xsl:when>
-				<xsl:otherwise>
-					<xsl:value-of select="generate-id(.)"/> = new JComboBox(<xsl:value-of select="generate-id(.)"/>E.values());
-				</xsl:otherwise>
-			</xsl:choose>
-			<xsl:value-of select="generate-id(.)"/>.setToolTipText("<xsl:apply-templates select="description"/>");
-			<xsl:if test="item[@default='true']">
-				 	<xsl:value-of select="generate-id(.)"/>.setSelectedItem(<xsl:value-of select="generate-id(.)"/>E.<xsl:value-of select="item[@default='true']/text()"/>);
+			Vector&lt;String&gt; values = new Vector&lt;String&gt;();
+			<xsl:if test="@required='false'">
+			values.add("");
 			</xsl:if>
+			<xsl:if  test="@enum-class">
+			for(<xsl:value-of select="@enum-class"/> E : <xsl:value-of select="@enum-class"/>.values())
+				{
+				values.add(E.name());
+				}
+			</xsl:if>
+			DefaultComboBoxModel&lt;String&gt; model = new DefaultComboBoxModel&lt;String&gt;(values);
+			<xsl:value-of select="generate-id(.)"/> = new JComboBox&lt;String&gt;(model);
+			<xsl:if  test="@enum-class and @default">
+				<xsl:value-of select="generate-id(.)"/>.setSelectedItem(<xsl:value-of select="@enum-class"/>.<xsl:value-of select="@default"/>.name());
+			</xsl:if>
+			owner.loadPreference(this.<xsl:value-of select="generate-id(.)"/>, <xsl:apply-templates select="." mode="prefs.key"/>);
+			<xsl:value-of select="generate-id(.)"/>.setToolTipText("<xsl:apply-templates select="description"/>");
+			label.setLabelFor(<xsl:value-of select="generate-id(.)"/>);
 			pane.add(this.<xsl:value-of select="generate-id(.)"/>);
 			<xsl:apply-templates select="filter"/>
 		</xsl:when>
@@ -220,13 +271,37 @@ private class <xsl:value-of select="concat(@name,'Pane')"/> extends AbstracComma
 			<xsl:if test="@default">
 			this.<xsl:value-of select="generate-id(.)"/>.setText("<xsl:value-of select="@default"/>");
 			</xsl:if>
-			
-			String val = preferences.get(<xsl:apply-templates select="." mode="prefs.key"/>,null);
-			if(val!=null) this.<xsl:value-of select="generate-id(.)"/>.setText(val);
+			owner.loadPreference(this.<xsl:value-of select="generate-id(.)"/>, <xsl:apply-templates select="." mode="prefs.key"/>);
+			label.setLabelFor(<xsl:value-of select="generate-id(.)"/>);
 			
 			pane.add(this.<xsl:value-of select="generate-id(.)"/>);
 			<xsl:apply-templates select="filter"/>
 		</xsl:when>
+		
+		<xsl:when test="@type='string'">
+			<xsl:choose>
+				<xsl:when test="@test='multiline'">
+				this.<xsl:value-of select="generate-id(.)"/> = new JTextArea(5,40);
+				JScrollPane scroll = new JScrollPane(this.<xsl:value-of select="generate-id(.)"/>);
+				pane.add(scroll);
+				</xsl:when>
+				<xsl:otherwise>
+				this.<xsl:value-of select="generate-id(.)"/> = new JTextField("");
+				pane.add(this.<xsl:value-of select="generate-id(.)"/>);
+				</xsl:otherwise>
+			</xsl:choose>
+			<xsl:value-of select="generate-id(.)"/>.setToolTipText("<xsl:apply-templates select="description"/>");
+			<xsl:if test="@default">
+			this.<xsl:value-of select="generate-id(.)"/>.setText("<xsl:value-of select="@default"/>");
+			</xsl:if>
+			owner.loadPreference(this.<xsl:value-of select="generate-id(.)"/>, <xsl:apply-templates select="." mode="prefs.key"/>);
+			label.setLabelFor(<xsl:value-of select="generate-id(.)"/>);
+			
+			
+			<xsl:apply-templates select="filter"/>
+		</xsl:when>
+		
+		
 		<xsl:otherwise>
 			<xsl:message>option unknow <xsl:value-of select="@type"/></xsl:message>
 		</xsl:otherwise>
@@ -260,12 +335,12 @@ private class <xsl:value-of select="concat(@name,'Pane')"/> extends AbstracComma
 				}
 		</xsl:when>
 		<xsl:when test="@type='enum'">
-			if(this.<xsl:value-of select="generate-id(.)"/>.getSelectedItem()!=null)
+			if(this.<xsl:value-of select="generate-id(.)"/>.getSelectedItem()!=null &amp;&amp;
+				!this.<xsl:value-of select="generate-id(.)"/>.getSelectedItem().toString().trim().isEmpty()
+				)
 				{
 				command.add("-<xsl:value-of select="@opt"/>");
-				
-				
-				command.add(String.valueOf(this.<xsl:value-of select="generate-id(.)"/>.getSelectedItem()));
+				command.add(this.<xsl:value-of select="generate-id(.)"/>.getSelectedItem().toString());
 				}
 		</xsl:when>
 		
@@ -278,6 +353,13 @@ private class <xsl:value-of select="concat(@name,'Pane')"/> extends AbstracComma
 				}
 		</xsl:when>
 		
+		<xsl:when test="@type='string'">
+			if(!this.<xsl:value-of select="generate-id(.)"/>.getText().trim().isEmpty())
+				{
+				command.add("-<xsl:value-of select="@opt"/>");
+				command.add(this.<xsl:value-of select="generate-id(.)"/>.getText().trim());
+				}
+		</xsl:when>
 		
 		<xsl:otherwise>
 			<xsl:message>option:declare unknow <xsl:value-of select="@type"/></xsl:message>
@@ -302,6 +384,28 @@ private class <xsl:value-of select="concat(@name,'Pane')"/> extends AbstracComma
 					{
 					return "<xsl:value-of select="@label"/> cannot be empty";
 					}
+				<xsl:if test="@type='input-file'">
+				else if(!this.<xsl:value-of select="generate-id(.)"/>.getFile().exists())
+					{
+					return "<xsl:value-of select="@label"/>: file doesn't exists "+ this.<xsl:value-of select="generate-id(.)"/>.getFile();
+					}
+				</xsl:if>
+				<xsl:if test="@type='output-file' and count(extension)&gt;0">
+				else
+					{
+					boolean ok=false;
+					<xsl:for-each select="extension">
+					if(this.<xsl:value-of select="generate-id(..)"/>.getFile().getName().endsWith(".<xsl:value-of select="text()"/>"))
+						{
+						ok=true;
+						}
+					</xsl:for-each>
+					if(!ok)
+						{
+						return "<xsl:value-of select="@label"/> not a valid extension:<xsl:for-each select="extension"> .<xsl:value-of select="text()"/></xsl:for-each>";
+						}
+					}
+				</xsl:if>
 			</xsl:if>
 		</xsl:when>
 		<xsl:when test="@type='boolean'">
@@ -309,7 +413,8 @@ private class <xsl:value-of select="concat(@name,'Pane')"/> extends AbstracComma
 		</xsl:when>
 		<xsl:when test="@type='enum'">
 			<xsl:if test="@required='true'">
-			if(this.<xsl:value-of select="generate-id(.)"/>.getSelectedItem()!=null)
+			if(this.<xsl:value-of select="generate-id(.)"/>.getSelectedItem()==null ||
+			   this.<xsl:value-of select="generate-id(.)"/>.getSelectedItem().toString().trim().isEmpty())
 				{
 				return "<xsl:value-of select="@label"/> cannot be empty";
 				}
@@ -359,7 +464,15 @@ private class <xsl:value-of select="concat(@name,'Pane')"/> extends AbstracComma
 				}
 			</xsl:if>
 		</xsl:when>
-		
+
+		<xsl:when test="@type='string'">
+			<xsl:if test="@required='true'">
+			if(!this.<xsl:value-of select="generate-id(.)"/>.getText().trim().isEmpty())
+				{
+				return "<xsl:value-of select="@label"/> cannot be empty";
+				}
+			</xsl:if>
+		</xsl:when>		
 		
 		<xsl:otherwise>
 			<xsl:message>option:declare unknow <xsl:value-of select="@type"/></xsl:message>
@@ -370,34 +483,23 @@ private class <xsl:value-of select="concat(@name,'Pane')"/> extends AbstracComma
 <xsl:template match="option" mode="save.prefs">
 	<xsl:choose>
 		<xsl:when test="@type='input-files'">
-				
+			owner.savePreference(this.<xsl:value-of select="generate-id(.)"/>, <xsl:apply-templates select="." mode="prefs.key"/>);
 		</xsl:when>
 		<xsl:when test="@type='input-file' or @type='output-file'">
-				if(this.<xsl:value-of select="generate-id(.)"/>.getFile()==null)
-					{
-					preferences.remove(<xsl:apply-templates select="." mode="prefs.key"/>);
-					}
-				else
-					{
-					preferences.put(
-								<xsl:apply-templates select="." mode="prefs.key"/>,
-								this.<xsl:value-of select="generate-id(.)"/>.getFile().getPath()
-								);
-					}
+			owner.savePreference(this.<xsl:value-of select="generate-id(.)"/>, <xsl:apply-templates select="." mode="prefs.key"/>);
 		</xsl:when>
 		<xsl:when test="@type='int'">
-				if(this.<xsl:value-of select="generate-id(.)"/>.getText().trim().isEmpty())
-					{
-					preferences.remove(<xsl:apply-templates select="." mode="prefs.key"/>);
-					}
-				else
-					{
-					preferences.put(
-								<xsl:apply-templates select="." mode="prefs.key"/>,
-								this.<xsl:value-of select="generate-id(.)"/>.getText().trim()
-								);
-					}
+			owner.savePreference(this.<xsl:value-of select="generate-id(.)"/>, <xsl:apply-templates select="." mode="prefs.key"/>);
 		</xsl:when>		
+		<xsl:when test="@type='boolean'">
+			owner.savePreference(this.<xsl:value-of select="generate-id(.)"/>, <xsl:apply-templates select="." mode="prefs.key"/>);
+		</xsl:when>
+		<xsl:when test="@type='string'">
+			owner.savePreference(this.<xsl:value-of select="generate-id(.)"/>, <xsl:apply-templates select="." mode="prefs.key"/>);
+		</xsl:when>
+		<xsl:when test="@type='enum'">
+			owner.savePreference(this.<xsl:value-of select="generate-id(.)"/>, <xsl:apply-templates select="." mode="prefs.key"/>);
+		</xsl:when>	
 		<xsl:otherwise>
 			<xsl:message>save.prefs:declare unknow <xsl:value-of select="@type"/></xsl:message>
 		</xsl:otherwise>
