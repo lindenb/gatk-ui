@@ -4,7 +4,32 @@
 
 	<program name="DepthOfCoverage">
 		<description>Assess sequence coverage by a wide array of metrics, partitioned by sample, read group, or library</description>
-	
+		<options>
+			<option opt="geneList" label="Gene List" type="input-file">
+				<description> Calculate coverage statistics over this list of genes</description>
+			</option>
+			<option opt="omitBaseOutput" label="omit DepthOutput At Each Base " type="boolean" default="true">
+				<description> Disabling the tabulation of total coverage at every base should speed up processing.</description>
+			</option>
+			
+			<option opt="I" label="BAM list" type="input-files"  required="true">
+				<description>Input Bam(s)</description>
+				<filter label="BAMS">
+					<extension indexed="true">bam</extension>
+					<extension>list</extension>
+				</filter>
+			</option>	
+			<option opt="o" label="Output" type="output-file" required="true">
+				<description>Base output</description>
+			</option>
+			<option opt="-countType" label="Output" type="enum" required="true" enum-class="org.broadinstitute.gatk.tools.walkers.coverage.CoverageUtils.CountPileupType">
+				<description>How should overlapping reads from the same fragment be handled?</description>
+			</option>
+			<option opt="-maxBaseQuality" label="Max base Quality" type="int" required="false" min-inclusive="0" max-inclusive="127">
+				<description>Bases with quality scores higher than this threshold will be skipped.</description>
+			</option>
+		</options>
 	</program>
+
 
 </programs>

@@ -1,6 +1,7 @@
 package com.github.lindenb.gatkui;
 
 import java.awt.BorderLayout;
+import java.awt.Color;
 import java.awt.Dimension;
 import java.awt.FlowLayout;
 import java.awt.Font;
@@ -9,17 +10,24 @@ import java.awt.event.ActionEvent;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
 import java.io.File;
-import java.util.Enumeration;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
 import java.util.prefs.Preferences;
 
 import javax.swing.AbstractAction;
 import javax.swing.BoxLayout;
+import javax.swing.DefaultListModel;
 import javax.swing.JButton;
 import javax.swing.JFileChooser;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
+import javax.swing.JList;
 import javax.swing.JMenu;
 import javax.swing.JMenuBar;
+import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.JTabbedPane;
@@ -27,7 +35,10 @@ import javax.swing.JTextArea;
 import javax.swing.JTextField;
 import javax.swing.SwingUtilities;
 import javax.swing.border.EmptyBorder;
+import javax.swing.border.LineBorder;
 import javax.swing.border.TitledBorder;
+import javax.swing.event.ListSelectionEvent;
+import javax.swing.event.ListSelectionListener;
 import javax.swing.filechooser.FileFilter;
 import javax.swing.text.Document;
 import javax.swing.text.JTextComponent;
@@ -42,13 +53,18 @@ import org.broadinstitute.gatk.engine.CommandLineGATK;
 import org.broadinstitute.gatk.utils.commandline.CommandLineProgram;
 import org.broadinstitute.gatk.utils.commandline.CommandLineUtils;
 
+@SuppressWarnings("serial")
 public class AbstractGatkUi extends JFrame
 	{
+	protected Thread runningThread = null;
+	@SuppressWarnings("unused")
 	private static Class<?> _force_static = CommandLineProgram.class ;
 	protected static final Logger LOG = CommandLineUtils.getStingLogger();
 	protected Preferences preferences = null;
 	private JTextComponent logArea;
 	protected InputFileChooser REFFileChooser;
+	protected InputFileChooser captureFileChooser;
+	private JTextField captureRegionField;
 	
 	private static class SwingAppender extends AppenderSkeleton
 		{
@@ -181,28 +197,30 @@ public class AbstractGatkUi extends JFrame
 		pane.setBorder(new TitledBorder("Reference"));
 		JPanel pane2 = new JPanel(new FlowLayout());
 		this.REFFileChooser  = new InputFileChooser("REF");
-		this.REFFileChooser.setFilter("FASTA","fa","fasta");
-		String path=this.preferences.get(GATK_REF_PATH_PREF,null);
-		if(path!=null) this.REFFileChooser.setFile(new File(path));
-		pane2.add(this.REFFileChooser);
-		pane2.add(new JButton(new AbstractAction("GATK")
-			{
+		this.REFFileChooser.setFilter(new javax.swing.filechooser.FileFilter() {
+			@Override
+			public String getDescription() {
+				return "REFERENCE FILE";
+			}
 			
 			@Override
-			public void actionPerformed(ActionEvent e)
+			public boolean accept(final java.io.File f)
 				{
-				try
+				if(f.isDirectory()) return true;
+				if(!(f.getName().toLowerCase().endsWith(".fa") ||
+					 f.getName().toLowerCase().endsWith(".fasta") ))
 					{
-					org.broadinstitute.gatk.engine.CommandLineGATK instance= new org.broadinstitute.gatk.engine.CommandLineGATK();
-					org.broadinstitute.gatk.engine.CommandLineGATK.start(instance, new String[0]);
+					return false;
 					}
-				catch(Exception err)
-					{
-					LOG.error("gatk",err);
-					
-					}
+				File fai =new File(f.getParentFile(), f.getName()+".fai");
+				if(fai.exists()) return true;
+				return false;
 				}
-			}));
+			});
+		String path=this.preferences.get(GATK_REF_PATH_PREF,null);
+		System.err.println("path "+path);
+		if(path!=null) this.REFFileChooser.setFile(new File(path));
+		pane2.add(this.REFFileChooser);
 		pane.add(pane2,BorderLayout.CENTER);
 		return pane;
 		}
@@ -216,24 +234,25 @@ public class AbstractGatkUi extends JFrame
 		pane.setBorder(new TitledBorder("Regions"));
 		
 		pane.setLayout(new BoxLayout(pane, BoxLayout.PAGE_AXIS));
-		InputFileChooser bedChooser = new InputFileChooser("BED");
-		bedChooser.setFilter("Region", "bed");
-		pane.add(bedChooser);
+		this.captureFileChooser = new InputFileChooser("BED");
+		this.captureFileChooser.setFilter("Region", "bed");
+		pane.add(this.captureFileChooser);
 		pane.add(new JLabel("or...."));
 		
 		JPanel pane2= new JPanel(new FlowLayout(FlowLayout.LEADING));
 		pane.add(pane2);
 		JLabel lbl =new JLabel("Region:");
 		pane2.add(lbl);
-		JTextField tf=new JTextField(50);
-		lbl.setLabelFor(tf);
-		pane2.add(tf);
+		this.captureRegionField=new JTextField(50);
+		lbl.setLabelFor(this.captureRegionField);
+		pane2.add(this.captureRegionField);
 		
 		return pane;
 		}
 	
 	protected void savePreferences()
 		{
+		System.err.println("SAVE PREFS");
 		if(this.REFFileChooser.getFile()==null)
 			{
 			this.preferences.remove(GATK_REF_PATH_PREF);
@@ -248,73 +267,142 @@ public class AbstractGatkUi extends JFrame
 		try {
 			LOG.debug("flush pref");
 			this.preferences.flush();
-			} catch(Exception err){LOG.warn(err);}
+			} catch(Exception err){LOG.warn(err);err.printStackTrace();}
+		try {
+			LOG.debug("flush pref");
+			this.preferences.sync();
+			} catch(Exception err){LOG.warn(err);err.printStackTrace();}
 		}
 	
 	private void doMenuClose()
 		{
 		LOG.info("exiting");
+		System.err.println("EXITING");
 		this.setVisible(false);
 		this.dispose();
 		savePreferences();
 		}
 	
 	
-	private abstract class AbstractTab  extends JPanel
+	
+	protected abstract class AbstracCommandPane  extends JPanel
 		{
-		AbstractTab()
+		JPanel bottomPane;
+		AbstractAction runAction;
+		AbstractAction cancelAction;
+		
+		AbstracCommandPane()
 			{
-			super(new BorderLayout(5,5));
-			this.setBorder(new TitledBorder(getLabel()));
-			}
-		public abstract String getLabel();
-		public abstract void loadPrefs(Preferences prefs);
-		public abstract void savePrefs(Preferences prefs);
-		}
-	
-	
-	
-	
-	private abstract class AbstractFileChooser extends JPanel
-		{
-		private JTextField textField;
-		private File file;
-		private FileFilter filter=null;
-		AbstractFileChooser(String label)
-			{
-			super(new BorderLayout(5,5));
-			JLabel lbl=new JLabel(label);
-			this.add(lbl,BorderLayout.WEST);
-			this.textField = new JTextField(50);
-			this.textField.setEditable(false);
-			lbl.setLabelFor(this.textField);
-			this.add(this.textField,BorderLayout.CENTER);
-			JPanel p = new JPanel(new FlowLayout());
-			this.add(p,BorderLayout.EAST);
-			p.add(new JButton(new AbstractAction("Set...")
-					{
-					@Override
-					public void actionPerformed(ActionEvent e)
-						{
-						File dir=(file!=null?file.getParentFile():null);
-						JFileChooser chooser = new JFileChooser(dir);
-						if(filter!=null) chooser.setFileFilter(filter);
-						if(select(chooser)!=JFileChooser.APPROVE_OPTION) return;
-						if(chooser.getSelectedFile()==null) return;
-						setFile(chooser.getSelectedFile());
-						}
-					}));
-			p.add(new JButton(new AbstractAction("Clear")
+			super(new BorderLayout());
+			
+			bottomPane = new JPanel(new FlowLayout(FlowLayout.TRAILING));
+			this.add(bottomPane,BorderLayout.SOUTH);
+			cancelAction = new AbstractAction("Cancel")
 				{
 				@Override
 				public void actionPerformed(ActionEvent e) {
-					setFile(null);
+					if(runningThread==null) return;
+					try {
+						runningThread.interrupt();
+						}
+					catch (Exception e2) {
+						}
+					runningThread=null;
+					}
+				};
+			runAction = new AbstractAction("Run")
+				{
+				
+				@Override
+				public void actionPerformed(ActionEvent e) {
+					if(runningThread!=null)
+						{
+						JOptionPane.showMessageDialog(AbstracCommandPane.this, "Command already running");
+						return;
+						}
+					String msg = canBuildCommandLine();
+					if(msg!=null)
+						{
+						JOptionPane.showMessageDialog(
+								AbstracCommandPane.this,
+								msg);
+						return;
+						}
+					List<String> cmd = buildCommandLine();
+					runningThread = new GATKRunner(cmd);
+					runningThread.start();
+					}
+				};
+			Font font = new Font("Dialog", Font.BOLD, 18);
+			JButton button = new JButton(cancelAction);
+			button.setContentAreaFilled(true);
+			button.setBackground(Color.ORANGE);
+			button.setForeground(Color.WHITE);
+			button.setFont(font);
+			bottomPane.add(button);
+			button = new JButton(runAction);
+			button.setContentAreaFilled(true);
+			button.setBackground(Color.GREEN);
+			button.setForeground(Color.WHITE);
+			button.setFont(font);
+			bottomPane.add(button);
+			}
+		public abstract String getCommandName();
+		public abstract void savePreferences();
+		
+		public String canBuildCommandLine()
+			{
+			if(REFFileChooser.getFile()==null)
+				{
+				return "REF not defined";
 				}
-				}));
+			return null;
+			}
+		
+		public List<String> buildCommandLine()
+			{
+			List<String> L = new ArrayList<>();
+			L.add("-T");
+			L.add(getCommandName());
+			if(REFFileChooser.getFile()==null)
+				{
+				LOG.error("REF not defined");
+				}
+			else
+				{
+				L.add("-R");
+				L.add(REFFileChooser.getFile().getPath());
+				}
+			if(captureFileChooser.getFile()!=null)
+				{
+				L.add("-L");
+				L.add(captureFileChooser.getFile().getPath());
+				}
+			else if(!captureRegionField.getText().trim().isEmpty())
+				{
+				L.add("-L");
+				L.add(captureRegionField.getText().trim());
+				}
+			return L;
+			}
+		}
+	protected abstract class AbstractFilterChooser extends JPanel
+		{
+		private FileFilter filter=null;
+		
+		public AbstractFilterChooser() {
+			super(new BorderLayout(5,5));
+			}
+		public void setFilter(FileFilter filter)
+			{
+			this.filter=filter;
+			}
+		public FileFilter getFilter() {
+			return filter;
 			}
 		public void setFilter(final String description,final String...extensions)
 			{
-			this.filter=new FileFilter() {
+			setFilter(new FileFilter() {
 				
 				@Override
 				public String getDescription() {
@@ -332,7 +420,45 @@ public class AbstractGatkUi extends JFrame
 						}
 					return false;
 					}
-				};
+				});
+			}
+		}
+	
+	protected abstract class AbstractFileChooser extends AbstractFilterChooser
+		{
+		private JTextField textField;
+		private File file;
+		AbstractFileChooser(String label)
+			{
+			
+			JLabel lbl=new JLabel(label);
+			this.add(lbl,BorderLayout.WEST);
+			this.textField = new JTextField(50);
+			this.textField.setEditable(false);
+			lbl.setLabelFor(this.textField);
+			this.add(this.textField,BorderLayout.CENTER);
+			JPanel p = new JPanel(new FlowLayout());
+			this.add(p,BorderLayout.EAST);
+			p.add(new JButton(new AbstractAction("Set...")
+					{
+					@Override
+					public void actionPerformed(ActionEvent e)
+						{
+						File dir=(file!=null?file.getParentFile():null);
+						JFileChooser chooser = new JFileChooser(dir);
+						if(getFilter()!=null) chooser.setFileFilter(getFilter());
+						if(select(chooser)!=JFileChooser.APPROVE_OPTION) return;
+						if(chooser.getSelectedFile()==null) return;
+						setFile(chooser.getSelectedFile());
+						}
+					}));
+			p.add(new JButton(new AbstractAction("Clear")
+				{
+				@Override
+				public void actionPerformed(ActionEvent e) {
+					setFile(null);
+				}
+				}));
 			}
 		protected abstract int select(final JFileChooser c);
 		
@@ -354,7 +480,7 @@ public class AbstractGatkUi extends JFrame
 				}
 			}
 		}
-	private class InputFileChooser extends AbstractFileChooser
+	protected class InputFileChooser extends AbstractFileChooser
 		{
 		InputFileChooser(String name)
 			{
@@ -365,5 +491,176 @@ public class AbstractGatkUi extends JFrame
 			return c.showOpenDialog(this);
 			}
 		}
+	
+	protected class OutputFileChooser extends AbstractFileChooser
+		{
+		OutputFileChooser(String name)
+			{
+			super(name);
+			}
+		@Override
+		protected int select(JFileChooser c) {
+			int r= c.showOpenDialog(this);
+			if( r!=JFileChooser.APPROVE_OPTION) return r;
+			File f= c.getSelectedFile();
+			if(f.exists() && JOptionPane.showConfirmDialog(this, f.getName()+" exist. Overwrite?", "File exists", JOptionPane.OK_CANCEL_OPTION, JOptionPane.WARNING_MESSAGE, null)!=JOptionPane.OK_OPTION)
+				{
+				return JFileChooser.CANCEL_OPTION;
+				}
+			return JFileChooser.APPROVE_OPTION;
+			}
+		}
 
+
+	protected class MultipleFileChooser extends AbstractFilterChooser
+		{
+		private JList<File> fileList;
+		private AbstractAction addAction;
+		private AbstractAction rmAction;
+		MultipleFileChooser(String label)
+			{
+			setBorder(new LineBorder(Color.DARK_GRAY,1));
+			this.fileList = new JList<>(new DefaultListModel<File>());
+			JPanel top = new JPanel(new FlowLayout(FlowLayout.TRAILING));
+			top.add(new JLabel(label));
+			this.add(top,BorderLayout.NORTH);
+			this.addAction = new AbstractAction("[+]")
+				{
+				@Override
+				public void actionPerformed(ActionEvent e)
+					{
+					Set<File> f= getFiles();
+					File first=(f.isEmpty()?null:f.iterator().next());
+					File dir=(first!=null?first.getParentFile():null);
+					JFileChooser chooser = new JFileChooser(dir);
+					chooser.setMultiSelectionEnabled(true);
+					if(getFilter()!=null) chooser.setFileFilter(getFilter());
+					if(chooser.showOpenDialog(MultipleFileChooser.this)!=JFileChooser.APPROVE_OPTION) return;
+					if(chooser.getSelectedFiles()==null) return;
+					addFiles(chooser.getSelectedFiles());
+					}
+				};
+			this.rmAction = new AbstractAction("[-]")
+				{
+				@Override
+				public void actionPerformed(ActionEvent e) {
+					int i[] = fileList.getSelectedIndices();
+					DefaultListModel<File> m = (DefaultListModel<File>)fileList.getModel();
+					for(int a=0;a< i.length;++a)
+						{
+						m.remove(i[(i.length-1)-a]);
+						}
+					}	
+				};
+			this.rmAction.setEnabled(false);
+			this.fileList.getSelectionModel().addListSelectionListener(new ListSelectionListener()
+					{
+					@Override
+					public void valueChanged(ListSelectionEvent e) {
+						rmAction.setEnabled(!fileList.isSelectionEmpty());
+					}
+				});
+			top.add(new JButton(addAction));
+			top.add(new JButton(rmAction));
+			
+			JScrollPane scroll = new JScrollPane(this.fileList);
+			this.add(scroll,BorderLayout.CENTER);
+			}
+		
+		public Set<File> getFiles()
+			{
+			 Set<File> f= new HashSet<>(fileList.getModel().getSize());
+			 for(int i=0;i< fileList.getModel().getSize();++i)
+			 	{
+				f.add(fileList.getModel().getElementAt(i)); 
+			 	}
+			return f;
+			}
+		public void addFiles(File files[])
+			{
+			if(files==null || files.length==0) return;
+			DefaultListModel<File> m = (DefaultListModel<File>)fileList.getModel();
+			Set<File> set=getFiles();
+			for(File f:files)
+				{	
+				if(set.contains(f)) continue;
+				set.add(f);
+				m.addElement(f);
+				}
+			}
+		}
+
+	private class GATKRunner extends Thread
+		{
+		private String args[];
+		public GATKRunner(List<String> args)
+			{
+			this.args=args.toArray(new String[args.size()]);
+			}
+		@Override
+		public void run()
+			{
+			LOG.info("starting "+Arrays.toString(args));
+			org.broadinstitute.gatk.engine.CommandLineGATK instance= new org.broadinstitute.gatk.engine.CommandLineGATK();
+
+			try
+				{
+				org.broadinstitute.gatk.engine.CommandLineGATK.start(instance, this.args);
+				
+				if(org.broadinstitute.gatk.engine.CommandLineGATK.result == 0)
+					{
+					try {
+						SwingUtilities.invokeAndWait(new Runnable() {
+							@Override
+							public void run() {
+								if(GATKRunner.this != runningThread) return;
+								JOptionPane.showMessageDialog(AbstractGatkUi.this,"Completed:"+Arrays.toString(args));
+								runningThread=null;
+							}
+						});
+					} catch (Exception e) {
+						LOG.warn(e);
+						}
+					}
+				else
+					{
+					try {
+						SwingUtilities.invokeAndWait(new Runnable() {
+							@Override
+							public void run() {
+								if(GATKRunner.this != runningThread) return;
+								JOptionPane.showMessageDialog(AbstractGatkUi.this,"FAILURE:"+Arrays.toString(args));
+								runningThread=null;
+							}
+						});
+					} catch (Exception e) {
+						LOG.warn(e);
+						
+						}
+					}
+				}
+			catch(final Exception err)
+				{
+				try {
+					SwingUtilities.invokeAndWait(new Runnable() {
+						@Override
+						public void run() {
+							if(GATKRunner.this != runningThread) return;
+							JOptionPane.showMessageDialog(AbstractGatkUi.this,
+									"FAILURE:"+err.getMessage());
+							runningThread=null;
+						}
+					});
+				} catch (Exception e) {
+					LOG.warn(e);
+					
+					}
+								}
+
+			}
+		}
+	
+	
+	
+	
 	}
