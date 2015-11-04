@@ -1,0 +1,8 @@
+/bin
+*~
+jeter*
+tmp
+src/main/generated-code/
+dist
+.classpath
+.project

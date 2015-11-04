@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<programs>
+
+
+	<program name="DepthOfCoverage">
+		<description>Assess sequence coverage by a wide array of metrics, partitioned by sample, read group, or library</description>
+	
+	</program>
+
+</programs>
