@@ -73,7 +73,7 @@
 		</options>
 	</program>
 	
-		<!-- =================================================================================== -->
+	<!-- =================================================================================== -->
 	<!-- =================================================================================== -->
 	<!-- =================================================================================== -->
 
@@ -100,9 +100,65 @@
 			</option>
 		</options>
 	</program>	
+
+	<!-- =================================================================================== -->
+	<!-- =================================================================================== -->
+	<!-- =================================================================================== -->
 	
+  <program name="FindCoveredIntervals" url="https://www.broadinstitute.org/gatk/gatkdocs/org_broadinstitute_gatk_tools_walkers_diagnostics_FindCoveredIntervals.php">
+    <description>Outputs a list of intervals that are covered above a given threshold</description>
+    <options>
+		<option opt="I" label="BAM list" type="input-files"  required="true">
+			<description>Input Bam(s)</description>
+			<filter label="BAMS">
+				<extension indexed="true">bam</extension>
+				<extension>list</extension>
+			</filter>
+		</option>
+	  <option type="int" opt="-coverage_threshold" label="Coverage Threshold" required="false">
+        <description>The minimum allowable coverage to be considered covered</description>
+      </option>
+      <option type="int" opt="-activeRegionExtension" label="Active Region Extension" required="false">
+        <description>The active region extension; if not provided defaults to Walker annotated default</description>
+      </option>
+      <option type="boolean" opt="-forceActive" label="Force Active" default="false">
+        <description>If provided, all bases will be tagged as active</description>
+      </option>
+      <option type="int" opt="-activeRegionMaxSize" label="Active region max size" required="false">
+        <description>The active region maximum size; if not provided defaults to Walker annotated default</description>
+      </option>
+      <option type="int" opt="-minBaseQuality" label="Min Base Quality" required="false">
+        <description>The minimum allowable base quality score to be counted for coverage</description>
+      </option>
+      <option type="int" opt="-minMappingQuality" label="Min Mapping Quality" required="false">
+        <description>The minimum allowable mapping quality score to be counted for coverage</description>
+      </option>
+      <option type="double" opt="-bandPassSigma" label="Band pass sigma" required="false">
+        <description>The sigma of the band pass filter Gaussian kernel</description>
+      </option>
+      <option type="double" opt="-activeProbabilityThreshold" label="Active Probability Threshold" required="false">
+        <description>Threshold for the probability of a profile state being active.</description>
+      </option>
+      <option type="boolean" opt="-uncovered" label="Uncovered" default="false">
+        <description>Output intervals that fail the coverage threshold instead</description>
+      </option>
+      <option type="output-file" opt="-activityProfileOut" label="Activity Profile" required="false">
+        <description>Output the raw activity profile results in IGV format</description>
+      </option>
+      <option type="output-file" opt="-activeRegionOut" label="Activity Region Out" required="false">
+        <description>Output the active region to this IGV formatted file</description>
+      </option>
+       <option type="output-file" opt="-out" label="Ouput" required="true">
+        <description> An output file created by the walker. Will overwrite contents if file exists</description>
+      </option>
+    </options>
+  </program>
+
+	<!-- =================================================================================== -->
+	<!-- =================================================================================== -->
+	<!-- =================================================================================== -->
 	
-	  <program name="ReassignOneMappingQualityFilter" disabled="false">
+   <program name="ReassignOneMappingQualityFilter" disabled="false">
     <description>Reassign one mapping quality filter</description>
     <options>
       <option type="int" opt="-reassign_mapping_quality_from" label="reassign mapping quality from" default="255">

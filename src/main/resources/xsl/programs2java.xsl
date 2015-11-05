@@ -117,14 +117,43 @@ public class <xsl:value-of select="concat(@name,'Pane')"/> extends AbstractGatkU
 		JLabel lbl = new JLabel(getDescription());
 		lbl.setFont(new Font("Dialog",Font.BOLD,18));
 		top.add(lbl,BorderLayout.CENTER);
+		
+		
+		if(getOnlineUrl()!=null &amp;&amp; java.awt.Desktop.isDesktopSupported())
+			{
+			final AbstractAction wwwAction = new AbstractAction("WWW")
+				{
+				@Override
+				public void actionPerformed(final java.awt.event.ActionEvent e) {
+						 try {
+						 	 java.awt.Desktop.getDesktop().browse(new java.net.URI(getOnlineUrl()));
+						 	 }
+						 catch(Exception err)
+						 	{
+						 	
+						 	}
+					}
+				};
+			wwwAction.putValue(AbstractAction.SHORT_DESCRIPTION,"Open GATK Documentation for this tool.");
+			final JButton www = new JButton(wwwAction);
+			top.add(www,BorderLayout.EAST);
+			}
+		
 		this.add(top,BorderLayout.NORTH);
 		
-		
-		JPanel pane = new JPanel(new AbstractGatkUi.MyLayout());
+		JPanel pane = new JPanel(new MyLayout());
 		this.add(pane,BorderLayout.CENTER);
 		
 		<xsl:apply-templates select="options/option" />
 		}
+	
+	<xsl:if test="@url">
+	@Override
+	public String getOnlineUrl()
+			{
+			return "<xsl:value-of select="@url"/>";
+			}
+	</xsl:if>
 	
 	@Override
 	public String getDescription()
@@ -179,7 +208,7 @@ public class <xsl:value-of select="concat(@name,'Pane')"/> extends AbstractGatkU
 		<xsl:when test="@type='enum' ">
 			JComboBox&lt;String&gt; <xsl:value-of select="generate-id(.)"/> = null;
 		</xsl:when>
-		<xsl:when test="@type='int'">
+		<xsl:when test="@type='int' or @type='double'">
 			JTextField <xsl:value-of select="generate-id(.)"/> = null;
 		</xsl:when>
 		<xsl:when test="@type='string'">
@@ -266,7 +295,7 @@ public class <xsl:value-of select="concat(@name,'Pane')"/> extends AbstractGatkU
 			pane.add(this.<xsl:value-of select="generate-id(.)"/>);
 			<xsl:apply-templates select="filter"/>
 		</xsl:when>
-		<xsl:when test="@type='int'">
+		<xsl:when test="@type='int' or @type='double'">
 			this.<xsl:value-of select="generate-id(.)"/> = new JTextField("");
 			<xsl:value-of select="generate-id(.)"/>.setToolTipText("<xsl:apply-templates select="description"/>");
 			<xsl:if test="@default">
@@ -278,6 +307,7 @@ public class <xsl:value-of select="concat(@name,'Pane')"/> extends AbstractGatkU
 			pane.add(this.<xsl:value-of select="generate-id(.)"/>);
 			<xsl:apply-templates select="filter"/>
 		</xsl:when>
+		
 		
 		<xsl:when test="@type='string'">
 			<xsl:choose>
@@ -346,7 +376,7 @@ public class <xsl:value-of select="concat(@name,'Pane')"/> extends AbstractGatkU
 		</xsl:when>
 		
 		
-		<xsl:when test="@type='int'">
+		<xsl:when test="@type='int' or @type='double'">
 			if(!this.<xsl:value-of select="generate-id(.)"/>.getText().trim().isEmpty())
 				{
 				command.add("-<xsl:value-of select="@opt"/>");
@@ -466,6 +496,39 @@ public class <xsl:value-of select="concat(@name,'Pane')"/> extends AbstractGatkU
 			</xsl:if>
 		</xsl:when>
 
+
+		<xsl:when test="@type='double'">
+			if(!this.<xsl:value-of select="generate-id(.)"/>.getText().trim().isEmpty())
+				{
+				try
+					{
+					double v = Double.parseDouble(this.<xsl:value-of select="generate-id(.)"/>.getText().trim());
+					<xsl:if test="@min">
+					if(v&lt;<xsl:value-of select="@min"/>)
+						{
+						return "<xsl:value-of select="@label"/>: should be greater or equal to <xsl:value-of select="@min"/>";
+						}
+					</xsl:if>
+					<xsl:if test="@max">
+					if(v&gt;<xsl:value-of select="@max"/>)
+						{
+						return "<xsl:value-of select="@label"/>: should be lower or equal to <xsl:value-of select="@max"/>";
+						}
+					</xsl:if>
+					}
+				catch(Exception err)
+					{
+					return "Bad number : <xsl:value-of select="@label"/>";
+					}
+				}
+			<xsl:if test="@required='true'">
+			else
+				{
+				return "<xsl:value-of select="@label"/> cannot be empty";
+				}
+			</xsl:if>
+		</xsl:when>	
+
 		<xsl:when test="@type='string'">
 			<xsl:if test="@required='true'">
 			if(!this.<xsl:value-of select="generate-id(.)"/>.getText().trim().isEmpty())
@@ -489,7 +552,7 @@ public class <xsl:value-of select="concat(@name,'Pane')"/> extends AbstractGatkU
 		<xsl:when test="@type='input-file' or @type='output-file'">
 			owner.savePreference(this.<xsl:value-of select="generate-id(.)"/>, <xsl:apply-templates select="." mode="prefs.key"/>);
 		</xsl:when>
-		<xsl:when test="@type='int'">
+		<xsl:when test="@type='int' or @type='double'">
 			owner.savePreference(this.<xsl:value-of select="generate-id(.)"/>, <xsl:apply-templates select="." mode="prefs.key"/>);
 		</xsl:when>		
 		<xsl:when test="@type='boolean'">

@@ -124,7 +124,7 @@ public class AbstractGatkUi extends JFrame
 	
 	protected AbstractGatkUi()
 		{
-		super("GATK-UI");
+		super("GATK-UI : "+GATKVersion.getVersion());
 		
 		LOG.debug("building ui");
 		this._preferences = Preferences.userNodeForPackage(AbstractGatkUi.class);
@@ -443,6 +443,10 @@ public class AbstractGatkUi extends JFrame
 			}
 		public abstract String getCommandName();
 		public abstract String getDescription();
+		public String getOnlineUrl()
+			{
+			return null;
+			}
 		public abstract void savePreferences();
 		
 		public String canBuildCommandLine()

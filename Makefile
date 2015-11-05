@@ -29,6 +29,7 @@ ${bin.dir}/gatk-ui.jar : \
 			${tmp.dir}/GATK_public.key  \
 			$(addprefix ${src.dir}/com/github/lindenb/gatkui/,$(addsuffix .java,GatkUi AbstractGatkUi)) \
 			${this.dir}src/main/generated-code/java/com/github/lindenb/gatkui/AbstractGatkPrograms.java \
+			${this.dir}src/main/generated-code/java/com/github/lindenb/gatkui/GATKVersion.java \
 			${gatk-jar}
 	mkdir -p $(dir $@)
 	${JAVAC} -d ${tmp.dir} -g -classpath "${gatk-jar}" -sourcepath "${src.dir}:${this.dir}src/main/generated-code/java" $(filter %.java,$^)
@@ -37,6 +38,10 @@ ${bin.dir}/gatk-ui.jar : \
 	${JAR} cfm $@ ${tmp.dir}/META-INF/MANIFEST.tmp  -C ${tmp.dir} .
 	#rm -rf ${tmp.dir}
 
+${this.dir}src/main/generated-code/java/com/github/lindenb/gatkui/GATKVersion.java: ${tmp.dir}/GATK_public.key
+	mkdir -p $(dir $@)
+	grep '^version' "${tmp.dir}/META-INF/maven/org.broadinstitute.gatk/gatk-tools-public/pom.properties" |\
+	cut -d'=' -f2 | awk 'BEGIN{V="";} {V=$$1;} END{printf("package com.github.lindenb.gatkui;\npublic class GATKVersion{public static String getVersion() { return \"%s\";}}\n",V);}' > $@
 
 ${bin.dir}/gatk-scanengines.jar: \
 			${tmp.dir}/GATK_public.key  \
