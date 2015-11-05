@@ -20,9 +20,13 @@ gatk-jar?=/commun/data/packages/gatk/3.3.0/GenomeAnalysisTK.jar
 
 
 
-all: ${bin.dir}/gatk-ui.jar
+all: ${bin.dir}/gatk-ui.jar programs.tmp.xml
 
-${bin.dir}/gatk-ui.jar :${tmp.dir}/GATK_public.key  \
+programs.tmp.xml : ${bin.dir}/gatk-scanengines.jar 
+	java -jar ${bin.dir}/gatk-scanengines.jar ${gatk-jar} 2> $(addsuffix .err,$@) | xmllint --format -o $@ -
+
+${bin.dir}/gatk-ui.jar : \
+			${tmp.dir}/GATK_public.key  \
 			$(addprefix ${src.dir}/com/github/lindenb/gatkui/,$(addsuffix .java,GatkUi AbstractGatkUi)) \
 			${this.dir}src/main/generated-code/java/com/github/lindenb/gatkui/AbstractGatkPrograms.java \
 			${gatk-jar}
@@ -32,6 +36,20 @@ ${bin.dir}/gatk-ui.jar :${tmp.dir}/GATK_public.key  \
 	echo "Main-Class: com.github.lindenb.gatkui.GatkUi" >> ${tmp.dir}/META-INF/MANIFEST.tmp
 	${JAR} cfm $@ ${tmp.dir}/META-INF/MANIFEST.tmp  -C ${tmp.dir} .
 	#rm -rf ${tmp.dir}
+
+
+${bin.dir}/gatk-scanengines.jar: \
+			${tmp.dir}/GATK_public.key  \
+			$(addprefix ${src.dir}/com/github/lindenb/gatkui/,$(addsuffix .java,ScanEngines)) \
+			${gatk-jar}
+	mkdir -p $(dir $@) ${tmp.dir}2/META-INF
+	${JAVAC} -d ${tmp.dir}2 -g -classpath "${gatk-jar}" -sourcepath "${src.dir}" $(filter %.java,$^)
+	echo "Manifest-Version: 1.0" > ${tmp.dir}2/META-INF/MANIFEST.tmp
+	echo "Main-Class: com.github.lindenb.gatkui.ScanEngines" >> ${tmp.dir}2/META-INF/MANIFEST.tmp
+	echo "Class-Path: $(realpath $(filter %.jar,$^)) $@" | fold -w 71 | awk '{printf("%s%s\n",(NR==1?"": " "),$$0);}' >>  ${tmp.dir}2/META-INF/MANIFEST.tmp
+	${JAR} cfm $@ ${tmp.dir}2/META-INF/MANIFEST.tmp  -C ${tmp.dir}2 .
+	rm -rf ${tmp.dir}2
+
 
 ${this.dir}src/main/generated-code/java/com/github/lindenb/gatkui/AbstractGatkPrograms.java :  \
 		src/main/resources/xsl/programs2java.xsl \

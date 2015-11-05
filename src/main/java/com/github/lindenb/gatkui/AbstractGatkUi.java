@@ -15,20 +15,15 @@ import java.awt.event.WindowEvent;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.HashSet;
 import java.util.List;
-import java.util.Set;
 import java.util.prefs.Preferences;
 
 import javax.swing.AbstractAction;
-import javax.swing.DefaultListModel;
 import javax.swing.JButton;
 import javax.swing.JCheckBox;
 import javax.swing.JComboBox;
-import javax.swing.JFileChooser;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
-import javax.swing.JList;
 import javax.swing.JMenu;
 import javax.swing.JMenuBar;
 import javax.swing.JOptionPane;
@@ -40,9 +35,6 @@ import javax.swing.JTextField;
 import javax.swing.SwingUtilities;
 import javax.swing.border.EmptyBorder;
 import javax.swing.border.TitledBorder;
-import javax.swing.event.ListSelectionEvent;
-import javax.swing.event.ListSelectionListener;
-import javax.swing.filechooser.FileFilter;
 import javax.swing.text.Document;
 import javax.swing.text.JTextComponent;
 
@@ -53,6 +45,10 @@ import org.apache.log4j.spi.LoggingEvent;
 import org.apache.log4j.spi.ThrowableInformation;
 import org.broadinstitute.gatk.utils.commandline.CommandLineProgram;
 import org.broadinstitute.gatk.utils.commandline.CommandLineUtils;
+
+import com.github.lindenb.gatkui.swing.AbstractFileChooser;
+import com.github.lindenb.gatkui.swing.InputFileChooser;
+import com.github.lindenb.gatkui.swing.MultipleFileChooser;
 
 @SuppressWarnings("serial")
 public class AbstractGatkUi extends JFrame
@@ -486,204 +482,17 @@ public class AbstractGatkUi extends JFrame
 				L.add("-L");
 				L.add(owner.captureRegionField.getText().trim());
 				}
+			if(owner.pedigreeFileChooser.getFile()!=null)
+				{
+				L.add("-ped");
+				L.add(owner.pedigreeFileChooser.getFile().getPath());
+				}
 			return L;
 			}
 		}
 	
 	
 	
-	static abstract class AbstractFilterChooser extends JPanel
-		{
-		private FileFilter filter=null;
-		
-		public AbstractFilterChooser() {
-			super(new BorderLayout(5,5));
-			}
-		public void setFilter(FileFilter filter)
-			{
-			this.filter=filter;
-			}
-		public FileFilter getFilter() {
-			return filter;
-			}
-		public void setFilter(final String description,final String...extensions)
-			{
-			setFilter(new FileFilter() {
-				
-				@Override
-				public String getDescription() {
-					return description;
-				}
-				
-				@Override
-				public boolean accept(File f)
-					{
-					if(f.isDirectory()) return true;
-					if(!f.isFile()) return false;
-					for(String ext:extensions)
-						{
-						if(f.getName().toLowerCase().endsWith(("."+ext).toLowerCase())) return true;
-						}
-					return false;
-					}
-				});
-			}
-		}
-	
-	static abstract class AbstractFileChooser extends AbstractFilterChooser
-		{
-		private JTextField textField;
-		private File file;
-		AbstractFileChooser()
-			{
-			this.textField = new JTextField(50);
-			this.textField.setEditable(false);
-			this.add(this.textField,BorderLayout.CENTER);
-			JPanel p = new JPanel(new FlowLayout());
-			this.add(p,BorderLayout.EAST);
-			p.add(new JButton(new AbstractAction("Set...")
-					{
-					@Override
-					public void actionPerformed(ActionEvent e)
-						{
-						File dir=(file!=null?file.getParentFile():null);
-						JFileChooser chooser = new JFileChooser(dir);
-						if(getFilter()!=null) chooser.setFileFilter(getFilter());
-						if(select(chooser)!=JFileChooser.APPROVE_OPTION) return;
-						if(chooser.getSelectedFile()==null) return;
-						setFile(chooser.getSelectedFile());
-						}
-					}));
-			p.add(new JButton(new AbstractAction("Clear")
-				{
-				@Override
-				public void actionPerformed(ActionEvent e) {
-					setFile(null);
-				}
-				}));
-			}
-		protected abstract int select(final JFileChooser c);
-		
-		public File getFile() {
-			return file;
-		}
-		public void setFile(File file) {
-			this.file = file;
-			if(file==null)
-				{
-				this.textField.setText("");	
-				this.textField.setToolTipText("");
-				}
-			else
-				{
-				this.textField.setText(file.getPath());
-				this.textField.setToolTipText(file.getPath());
-				this.textField.setCaretPosition(0);
-				}
-			}
-		}
-	static class InputFileChooser extends AbstractFileChooser
-		{
-		@Override
-		protected int select(JFileChooser c) {
-			return c.showOpenDialog(this);
-			}
-		}
-	
-	static class OutputFileChooser extends AbstractFileChooser
-		{
-		@Override
-		protected int select(JFileChooser c) {
-			int r= c.showOpenDialog(this);
-			if( r!=JFileChooser.APPROVE_OPTION) return r;
-			File f= c.getSelectedFile();
-			if(f.exists() && JOptionPane.showConfirmDialog(this, f.getName()+" exist. Overwrite?", "File exists", JOptionPane.OK_CANCEL_OPTION, JOptionPane.WARNING_MESSAGE, null)!=JOptionPane.OK_OPTION)
-				{
-				return JFileChooser.CANCEL_OPTION;
-				}
-			return JFileChooser.APPROVE_OPTION;
-			}
-		}
-
-
-	static class MultipleFileChooser extends AbstractFilterChooser
-		{
-		private JList<File> fileList;
-		private AbstractAction addAction;
-		private AbstractAction rmAction;
-		MultipleFileChooser()
-			{
-			this.fileList = new JList<>(new DefaultListModel<File>());
-			JPanel top = new JPanel(new FlowLayout(FlowLayout.LEADING));
-			this.add(top,BorderLayout.NORTH);
-			this.addAction = new AbstractAction("[+]")
-				{
-				@Override
-				public void actionPerformed(ActionEvent e)
-					{
-					Set<File> f= getFiles();
-					File first=(f.isEmpty()?null:f.iterator().next());
-					File dir=(first!=null?first.getParentFile():null);
-					JFileChooser chooser = new JFileChooser(dir);
-					chooser.setMultiSelectionEnabled(true);
-					if(getFilter()!=null) chooser.setFileFilter(getFilter());
-					if(chooser.showOpenDialog(MultipleFileChooser.this)!=JFileChooser.APPROVE_OPTION) return;
-					if(chooser.getSelectedFiles()==null) return;
-					addFiles(chooser.getSelectedFiles());
-					}
-				};
-			this.addAction.putValue(AbstractAction.LONG_DESCRIPTION, "Add a File");
-			this.rmAction = new AbstractAction("[-]")
-				{
-				@Override
-				public void actionPerformed(ActionEvent e) {
-					int i[] = fileList.getSelectedIndices();
-					DefaultListModel<File> m = (DefaultListModel<File>)fileList.getModel();
-					for(int a=0;a< i.length;++a)
-						{
-						m.remove(i[(i.length-1)-a]);
-						}
-					}	
-				};
-			this.rmAction.putValue(AbstractAction.LONG_DESCRIPTION, "Remove selected File");
-			this.rmAction.setEnabled(false);
-			this.fileList.getSelectionModel().addListSelectionListener(new ListSelectionListener()
-					{
-					@Override
-					public void valueChanged(ListSelectionEvent e) {
-						rmAction.setEnabled(!fileList.isSelectionEmpty());
-					}
-				});
-			top.add(new JButton(addAction));
-			top.add(new JButton(rmAction));
-			
-			JScrollPane scroll = new JScrollPane(this.fileList);
-			this.add(scroll,BorderLayout.CENTER);
-			}
-		
-		public Set<File> getFiles()
-			{
-			 Set<File> f= new HashSet<>(fileList.getModel().getSize());
-			 for(int i=0;i< fileList.getModel().getSize();++i)
-			 	{
-				f.add(fileList.getModel().getElementAt(i)); 
-			 	}
-			return f;
-			}
-		public void addFiles(File files[])
-			{
-			if(files==null || files.length==0) return;
-			DefaultListModel<File> m = (DefaultListModel<File>)fileList.getModel();
-			Set<File> set=getFiles();
-			for(File f:files)
-				{	
-				if(set.contains(f)) continue;
-				set.add(f);
-				m.addElement(f);
-				}
-			}
-		}
-
 	private static class GATKRunner extends Thread
 		{
 		private AbstractGatkUi owner;

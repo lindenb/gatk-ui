@@ -8,3 +8,5 @@ dist
 .project
 local.mk
 GenomeAnalysisTK.jar
+programs.tmp.xml
+programs.tmp.xml.err

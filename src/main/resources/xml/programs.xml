@@ -102,4 +102,17 @@
 	</program>	
 	
 	
+	  <program name="ReassignOneMappingQualityFilter" disabled="false">
+    <description>Reassign one mapping quality filter</description>
+    <options>
+      <option type="int" opt="-reassign_mapping_quality_from" label="reassign mapping quality from" default="255">
+        <description>Original mapping quality</description>
+      </option>
+      <option type="int" opt="-reassign_mapping_quality_to" label="reassign mapping quality to" default="60">
+        <description>Desired mapping quality</description>
+      </option>
+    </options>
+  </program>
+
+	
 </programs>

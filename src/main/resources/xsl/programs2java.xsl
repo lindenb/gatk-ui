@@ -21,12 +21,14 @@ import javax.swing.border.TitledBorder;
 import javax.annotation.Generated;
 import java.io.*;
 import java.util.*;
+import com.github.lindenb.gatkui.swing.*;
 
 @Generated("xslt")
 @SuppressWarnings("serial")
 public abstract class AbstractGatkPrograms extends AbstractGatkUi
 	{
-	<xsl:apply-templates select="program" mode="declare"/>
+	
+	<xsl:apply-templates select="program[not(@disabled='true')]" mode="declare"/>
 	protected AbstractGatkPrograms()
 		{
 		}
@@ -35,7 +37,8 @@ public abstract class AbstractGatkPrograms extends AbstractGatkUi
 		{
 		super.buildTabbedPane(tabbedPane);
 		AbstractAction action=null;
-		<xsl:for-each select="program">
+		<xsl:for-each select="program[not(@disabled='true')]">
+		 <xsl:sort select="@name" />
 		
 		final int <xsl:value-of select="generate-id(.)"/>idx=  tabbedPane.getTabCount();
 		
@@ -61,11 +64,11 @@ public abstract class AbstractGatkPrograms extends AbstractGatkUi
 	@Override
 	protected void savePreferences()
 		{
-		<xsl:apply-templates select="program" mode="prefs"/>
+		<xsl:apply-templates select="program[not(@disabled='true')]" mode="prefs"/>
 		super.savePreferences();
 		}
 	
-	<xsl:apply-templates select="program"/>
+	<xsl:apply-templates select="program[not(@disabled='true')]"/>
 	}
 
 </xsl:template>
@@ -91,9 +94,7 @@ import javax.swing.border.TitledBorder;
 import javax.annotation.Generated;
 import java.io.*;
 import java.util.*;
-import com.github.lindenb.gatkui.AbstractGatkUi.MultipleFileChooser;
-import com.github.lindenb.gatkui.AbstractGatkUi.InputFileChooser;
-import com.github.lindenb.gatkui.AbstractGatkUi.OutputFileChooser;
+import com.github.lindenb.gatkui.swing.*;
 
 @Generated("xslt")
 @SuppressWarnings("serial")
