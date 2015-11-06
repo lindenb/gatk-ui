@@ -6,6 +6,7 @@
 
 <xsl:output method="xml" indent="yes"/>
 <xsl:variable name="programName" />
+<xsl:variable name="www" />
 
 <xsl:template match="/">
 <xsl:apply-templates select="j:object"  mode="program.root"/>
@@ -16,6 +17,25 @@
 <xsl:attribute name="name">
 	<xsl:value-of select="@programName"/>
 </xsl:attribute>
+
+<xsl:if test="string-length($www)&gt;0">
+	<xsl:attribute name="url">
+		<xsl:value-of select="$www"/>
+	</xsl:attribute>
+</xsl:if>
+
+<xsl:attribute name="category">
+	<xsl:choose>
+		<xsl:when test="j:string[@name='group']">
+			<xsl:value-of select="j:string[@name='group']"/>
+		</xsl:when>
+		<xsl:otherwise>
+			<xsl:text>Others</xsl:text>
+		</xsl:otherwise>
+	</xsl:choose>
+</xsl:attribute>
+
+
 <xsl:comment>The MIT License (MIT)
 
 Copyright (c) 2015 Pierre Lindenbaum
@@ -46,17 +66,35 @@ SOFTWARE.
 </xsl:template>
 
 <xsl:template match="j:object"  mode="argument">
+<xsl:variable name="type0" select="j:string[@name='type']/text()"/>
+<xsl:variable name="type">
+	<xsl:choose>
+		<xsl:when test="count(j:array[@name='options']/j:object)&gt;0">
+			<xsl:text>enum</xsl:text>
+		</xsl:when>
+		<xsl:when test="$type0 = 'File'">
+			<xsl:text>input-file</xsl:text>
+		</xsl:when>
+		<xsl:when test="$type0 = 'byte'">
+			<xsl:text>int</xsl:text>
+		</xsl:when>
+		<xsl:otherwise>
+			<xsl:value-of select="$type0"/>
+		</xsl:otherwise>
+	</xsl:choose>
+</xsl:variable>
+
 <option>
 <xsl:attribute name="opt">
 	<xsl:value-of select="substring(j:string[@name='name'],2)"/>
 </xsl:attribute>
 <xsl:attribute name="type">
-	<xsl:variable name="type" select="j:string[@name='type']/text()"/>
 	<xsl:value-of select="$type"/>
 </xsl:attribute>
 
 
 	<xsl:choose>
+		<xsl:when test="$type = 'boolean'"></xsl:when>
 		<xsl:when test="j:string[@name='required']/text() = 'yes'">
 			<xsl:attribute name="required">true</xsl:attribute>
 		</xsl:when>
@@ -66,6 +104,9 @@ SOFTWARE.
 	</xsl:choose>
 
 	<xsl:choose>
+		<xsl:when test="j:string[@name='defaultValue'] = 'NA' and $type = 'boolean' ">
+			<xsl:attribute name="default">false</xsl:attribute>
+		</xsl:when>
 		<xsl:when test="j:string[@name='required']/text() = 'no'">
 		</xsl:when>
 		<xsl:when test="j:string[@name='defaultValue'] != 'NA'">
@@ -77,7 +118,24 @@ SOFTWARE.
 	
 
 	<description><xsl:apply-templates select="j:string[@name='summary']"/></description>
+	<xsl:apply-templates select="j:array[@name='options']" mode='enum'/>
+
 </option>
 </xsl:template>
+
+<xsl:template match="j:array[@name='options']" mode='enum'>
+  <enum>
+  	<xsl:for-each select="j:object">
+  		<item>
+  			<xsl:attribute name="value">
+  			<xsl:value-of select="j:string[@name='name']"/>
+  			</xsl:attribute>
+			<description><xsl:apply-templates select="j:string[@name='summary']"/></description>  			
+  		</item>
+  	</xsl:for-each>
+  </enum>
+</xsl:template>
+
+
 
 </xsl:stylesheet>

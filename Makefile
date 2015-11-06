@@ -83,7 +83,10 @@ ${this.dir}src/main/generated-code/xml/DepthOfCoverage.xml : \
 	${bin.dir}/json2xml.jar
 	mkdir -p $(dir $@)
 	java -jar ${bin.dir}/json2xml.jar $< | xmllint --format --output "$@" -
-
+	
+	
+x: ${this.dir}src/main/generated-code/xml/DepthOfCoverage.xml
+	xsltproc src/main/resources/xsl/jsonx2program.xsl $<
 
 ${this.dir}src/main/generated-code/java/com/github/lindenb/gatkui/AbstractGatkPrograms.java :  \
 		src/main/resources/xsl/programs2java.xsl \
