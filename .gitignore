@@ -10,3 +10,4 @@ local.mk
 GenomeAnalysisTK.jar
 programs.tmp.xml
 programs.tmp.xml.err
+src/main/resources/images/splash.png

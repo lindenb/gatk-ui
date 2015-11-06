@@ -26,31 +26,35 @@ package com.github.lindenb.gatkui.swing;
 
 import java.awt.BorderLayout;
 import java.awt.FlowLayout;
+import java.awt.Font;
 import java.awt.event.ActionEvent;
-import java.io.File;
-import java.util.HashSet;
+import java.util.ArrayList;
+import java.util.LinkedHashSet;
+import java.util.List;
 import java.util.Set;
 
 import javax.swing.AbstractAction;
 import javax.swing.DefaultListModel;
 import javax.swing.JButton;
-import javax.swing.JFileChooser;
 import javax.swing.JList;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
+import javax.swing.JTextField;
 import javax.swing.event.ListSelectionEvent;
 import javax.swing.event.ListSelectionListener;
 
 
 @SuppressWarnings("serial")
-public class MultipleFileChooser extends AbstractFilterChooser
+public class MultipleStringChooser extends JPanel
 	{
-	private JList<File> fileList;
+	private JTextField inputField;
+	private JList<String> stringList;
 	private AbstractAction addAction;
 	private AbstractAction rmAction;
-	public MultipleFileChooser()
+	public MultipleStringChooser()
 		{
-		this.fileList = new JList<>(new DefaultListModel<File>());
+		super(new BorderLayout(5,5));
+		this.stringList = new JList<>(new DefaultListModel<String>());
 		JPanel top = new JPanel(new FlowLayout(FlowLayout.LEADING));
 		this.add(top,BorderLayout.NORTH);
 		this.addAction = new AbstractAction("[+]")
@@ -58,65 +62,83 @@ public class MultipleFileChooser extends AbstractFilterChooser
 			@Override
 			public void actionPerformed(ActionEvent e)
 				{
-				Set<File> f= getFiles();
-				File first=(f.isEmpty()?null:f.iterator().next());
-				File dir=(first!=null?first.getParentFile():null);
-				JFileChooser chooser = new JFileChooser(dir);
-				chooser.setMultiSelectionEnabled(true);
-				if(getFilter()!=null) chooser.setFileFilter(getFilter());
-				if(chooser.showOpenDialog(MultipleFileChooser.this)!=JFileChooser.APPROVE_OPTION) return;
-				if(chooser.getSelectedFiles()==null) return;
-				addFiles(chooser.getSelectedFiles());
+				if(addString(inputField.getText().trim()))
+					{
+					inputField.setText("");
+					}
 				}
 			};
-		this.addAction.putValue(AbstractAction.LONG_DESCRIPTION, "Add a File");
+		this.addAction.putValue(AbstractAction.LONG_DESCRIPTION,
+				"Add a Text");
+
+		this.inputField=new JTextField("",10);
+		this.inputField.setFont(new Font("Dialog",Font.PLAIN,10));
+		this.inputField.addActionListener(this.addAction);
+		top.add(this.inputField);
+		
+			
 		this.rmAction = new AbstractAction("[-]")
 			{
 			@Override
 			public void actionPerformed(ActionEvent e) {
-				int i[] = fileList.getSelectedIndices();
-				DefaultListModel<File> m = (DefaultListModel<File>)fileList.getModel();
+				int i[] = stringList.getSelectedIndices();
+				DefaultListModel<String> m = (DefaultListModel<String>)stringList.getModel();
 				for(int a=0;a< i.length;++a)
 					{
 					m.remove(i[(i.length-1)-a]);
 					}
 				}	
 			};
-		this.rmAction.putValue(AbstractAction.LONG_DESCRIPTION, "Remove selected File");
+		this.rmAction.putValue(AbstractAction.LONG_DESCRIPTION,
+				"Remove selected.");
 		this.rmAction.setEnabled(false);
-		this.fileList.getSelectionModel().addListSelectionListener(new ListSelectionListener()
+		this.stringList.getSelectionModel().addListSelectionListener(new ListSelectionListener()
 				{
 				@Override
 				public void valueChanged(ListSelectionEvent e) {
-					rmAction.setEnabled(!fileList.isSelectionEmpty());
+					rmAction.setEnabled(!stringList.isSelectionEmpty());
 				}
 			});
 		top.add(new JButton(addAction));
 		top.add(new JButton(rmAction));
 		
-		JScrollPane scroll = new JScrollPane(this.fileList);
+		JScrollPane scroll = new JScrollPane(this.stringList);
 		this.add(scroll,BorderLayout.CENTER);
 		}
 	
-	public Set<File> getFiles()
+	public boolean acceptString(final String s)
 		{
-		 Set<File> f= new HashSet<>(fileList.getModel().getSize());
-		 for(int i=0;i< fileList.getModel().getSize();++i)
-		 	{
-			f.add(fileList.getModel().getElementAt(i)); 
-		 	}
-		return f;
+		return true;
 		}
-	public void addFiles(File files[])
+	
+	public boolean requiresUnique()
 		{
-		if(files==null || files.length==0) return;
-		DefaultListModel<File> m = (DefaultListModel<File>)fileList.getModel();
-		Set<File> set=getFiles();
-		for(File f:files)
-			{	
-			if(set.contains(f)) continue;
-			set.add(f);
-			m.addElement(f);
+		return false;
+		}
+	
+	public List<String> getStrings()
+		{
+		 List<String> L= new ArrayList<String>(this.stringList.getModel().getSize());
+		 for(int i=0;i< this.stringList.getModel().getSize();++i)
+		 	{
+			L.add(stringList.getModel().getElementAt(i)); 
+		 	}
+		if(requiresUnique())
+			{
+			Set<String> set = new LinkedHashSet<>(L);
+			L= new ArrayList<>(set);
 			}
+		return L;
+		}
+	public boolean addString(String s)
+		{
+		if(s==null) return false;
+		s=s.trim();
+		if(s.trim().isEmpty()) return false;
+		if(!acceptString(s)) return false;
+		DefaultListModel<String> m = (DefaultListModel<String>)this.stringList.getModel();
+		if(requiresUnique() && getStrings().contains(s)) return false;
+		m.addElement(s);
+		return true;
 		}
 }

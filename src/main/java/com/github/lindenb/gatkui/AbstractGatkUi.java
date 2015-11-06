@@ -21,9 +21,6 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 
-
-
-
 */
 package com.github.lindenb.gatkui;
 
@@ -71,6 +68,7 @@ import org.broadinstitute.gatk.utils.commandline.CommandLineUtils;
 import com.github.lindenb.gatkui.swing.AbstractFileChooser;
 import com.github.lindenb.gatkui.swing.InputFileChooser;
 import com.github.lindenb.gatkui.swing.MultipleFileChooser;
+import com.github.lindenb.gatkui.swing.MultipleStringChooser;
 import com.github.lindenb.gatkui.swing.MyLayout;
 
 @SuppressWarnings("serial")
@@ -296,7 +294,7 @@ public class AbstractGatkUi extends JFrame
 	public void loadPreference(AbstractFileChooser component,String key)
 		{
 		String path=getPreferences().get(key,null);
-		if(path!=null) component.setFile(new File(path));
+		if(path!=null &&  !path.isEmpty()) component.setFile(new File(path));
 		}
 	
 	public void savePreference(AbstractFileChooser component,String key)
@@ -317,7 +315,7 @@ public class AbstractGatkUi extends JFrame
 		{
 		String path=getPreferences().get(key,null);
 		if(path==null) return;
-		for(String s:path.split(""))
+		for(String s:path.split("[ \n\t]+"))
 			{
 			if(s.isEmpty()) continue;
 			component.addFiles(new File[]{new File(s)});
@@ -338,6 +336,37 @@ public class AbstractGatkUi extends JFrame
 				{
 				if(sb.length()!=0) sb.append(" ");
 				sb.append(f.getPath());
+				}
+			getPreferences().put(key,sb.toString());
+			}
+		}
+
+	public void loadPreference(MultipleStringChooser component,String key)
+		{
+		String ss=getPreferences().get(key,null);
+		if(ss==null) return;
+		for(String s:ss.split("[ \n\t]+"))
+			{
+			if(s.isEmpty()) continue;
+			if(!component.acceptString(s)) continue;
+			component.addString(s);
+			}
+	
+		}
+
+	public void savePreference(MultipleStringChooser component,String key)
+		{
+		if(component.getStrings().isEmpty())
+			{
+			getPreferences().remove(key);
+			}
+		else
+			{
+			StringBuilder sb=new StringBuilder();
+			for(String s:component.getStrings())
+				{
+				if(sb.length()!=0) sb.append(" ");
+				sb.append(s);
 				}
 			getPreferences().put(key,sb.toString());
 			}
@@ -419,6 +448,7 @@ public class AbstractGatkUi extends JFrame
 	 */
 	protected abstract static class AbstracCommandPane  extends JPanel
 		{
+		protected static final Logger LOG = AbstractGatkUi.LOG;
 		JPanel bottomPane;
 		AbstractAction runAction;
 		AbstractAction cancelAction;
@@ -517,7 +547,7 @@ public class AbstractGatkUi extends JFrame
 			if(this.requiresIndexedReference())
 				{
 				File fai =new File(f.getParentFile(), f.getName()+".fai");
-				if(fai.exists()) return "REF needs to be indexed but cannot find "+fai;
+				if(!fai.exists()) return "REF needs to be indexed but cannot find "+fai;
 				}
 			if(this.requiresPedigree() && owner.pedigreeFileChooser.getFile()==null)
 				{
@@ -556,12 +586,32 @@ public class AbstractGatkUi extends JFrame
 				L.add("-L");
 				L.add(owner.captureRegionField.getText().trim());
 				}
+
 			if(owner.pedigreeFileChooser.getFile()!=null)
 				{
 				L.add("-ped");
 				L.add(owner.pedigreeFileChooser.getFile().getPath());
 				}
 			return L;
+			}
+		
+		public String makeLabel(String s)
+			{
+			while(s.startsWith("-")) s=s.substring(1);
+			for(int i=0;i+1<s.length();++i)
+				{
+				if( Character.isLetter(s.charAt(i)) &&
+					Character.isLetter(s.charAt(i+1)) &&
+					Character.isLowerCase(s.charAt(i)) &&
+					Character.isUpperCase(s.charAt(i+1)))
+					{
+					return makeLabel(s.substring(0,i+1)+" "+
+							Character.toLowerCase(s.charAt(i+1))
+							+(i+2<s.length()?s.substring(i+2):"")
+							);
+					}
+				}
+			return s.replace('_', ' ');
 			}
 		}
 	

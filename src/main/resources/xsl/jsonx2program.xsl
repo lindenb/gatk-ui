@@ -5,17 +5,20 @@
 	version='1.0'>
 
 <xsl:output method="xml" indent="yes"/>
-<xsl:variable name="programName" />
-<xsl:variable name="www" />
+<xsl:variable name="programName" select="/j:object/j:string[@name='name']/text()" />
+<xsl:param name="www" />
 
 <xsl:template match="/">
+<xsl:if test="string-length($programName)=0">
+<xsl:message terminate="yes">program name is empty</xsl:message>
+</xsl:if>
 <xsl:apply-templates select="j:object"  mode="program.root"/>
 </xsl:template>
 
 <xsl:template match="j:object"  mode="program.root">
 <program enabled="true">
 <xsl:attribute name="name">
-	<xsl:value-of select="@programName"/>
+	<xsl:value-of select="$programName"/>
 </xsl:attribute>
 
 <xsl:if test="string-length($www)&gt;0">
@@ -60,6 +63,20 @@ SOFTWARE.
 </xsl:comment>
 <description><xsl:apply-templates select="j:string[@name='summary']"/></description>
 <options>
+	<xsl:choose>
+		<xsl:when test="j:string[@name='walkertype']/text()='LocusWalker'">
+				<option opt="I" label="BAM list" type="input-files"  required="true">
+					<description>Input Bam(s)</description>
+					<filter label="BAMS">
+						<extension indexed="true">bam</extension>
+						<extension>list</extension>
+					</filter>
+				</option>
+		</xsl:when>
+		<xsl:otherwise>
+			<xsl:message terminate="yes">Unknown walkertype <xsl:value-of select="j:string[@name='walkertype']"/></xsl:message>
+		</xsl:otherwise>
+	</xsl:choose>
 	<xsl:apply-templates select="j:array[@name='arguments']/j:object" mode="argument"/>
 </options>
 </program>
@@ -78,19 +95,46 @@ SOFTWARE.
 		<xsl:when test="$type0 = 'byte'">
 			<xsl:text>int</xsl:text>
 		</xsl:when>
-		<xsl:otherwise>
+		<xsl:when test="$type0 = 'String'">
+			<xsl:text>string</xsl:text>
+		</xsl:when>
+		<xsl:when test="$type0 = 'int' or $type0 = 'double'  or $type0 = 'boolean'">
 			<xsl:value-of select="$type0"/>
+		</xsl:when>
+		<xsl:when test="$type0 = 'int[]'">
+			<xsl:text>int-list</xsl:text>
+		</xsl:when>
+		<xsl:when test="$type0 = 'Map[DoCOutputType,PrintStream]'">
+			<xsl:text>output-file</xsl:text>
+		</xsl:when>
+		<xsl:when test="$type0 = 'RodBinding[VariantContext]'">
+			<xsl:text>output-file</xsl:text>
+		</xsl:when>
+		
+		<xsl:otherwise>
+			<xsl:message terminate="no">#### <xsl:value-of select="$type0"/></xsl:message>
+			<xsl:text></xsl:text>
 		</xsl:otherwise>
 	</xsl:choose>
 </xsl:variable>
 
+<xsl:choose>
+<xsl:when test="string-length($type)&gt;0">
 <option>
+
 <xsl:attribute name="opt">
 	<xsl:value-of select="substring(j:string[@name='name'],2)"/>
 </xsl:attribute>
+
+<xsl:attribute name="label">
+	<xsl:value-of select="translate(j:string[@name='name'],'-','')"/>
+</xsl:attribute>
+
 <xsl:attribute name="type">
 	<xsl:value-of select="$type"/>
 </xsl:attribute>
+
+
 
 
 	<xsl:choose>
@@ -114,13 +158,31 @@ SOFTWARE.
 		</xsl:when>
 	</xsl:choose>
 
+	<xsl:if test="$type ='int'">
+		<xsl:if test="j:string[@name='minValue']/text()!='NA'  and j:string[@name='minValue']/text()!='-Infinity'">
+			<xsl:attribute name="min-inclusive"><xsl:value-of select="j:string[@name='minValue']"/></xsl:attribute>
+		</xsl:if>
+		<xsl:if test="j:string[@name='maxValue']/text()!='NA' and j:string[@name='maxValue']/text()!='Infinity'">
+			<xsl:attribute name="max-inclusive"><xsl:value-of select="j:string[@name='maxValue']"/></xsl:attribute>
+		</xsl:if>
+	</xsl:if>
 
 	
 
 	<description><xsl:apply-templates select="j:string[@name='summary']"/></description>
-	<xsl:apply-templates select="j:array[@name='options']" mode='enum'/>
+	<xsl:apply-templates select="j:array[@name='options' and count(j:object)&gt;0]" mode='enum'/>
 
+	<xsl:choose>
+		<xsl:when test="$type0 = 'RodBinding[VariantContext]'">
+			<extension>vcf</extension>
+		</xsl:when>
+	</xsl:choose>
 </option>
+</xsl:when>
+<xsl:otherwise>
+	<xsl:message>IGNORING TYPE=<xsl:value-of select="$type0"/></xsl:message>
+</xsl:otherwise>
+</xsl:choose>
 </xsl:template>
 
 <xsl:template match="j:array[@name='options']" mode='enum'>

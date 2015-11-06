@@ -36,10 +36,13 @@ ${bin.dir}/gatk-ui.jar : \
 			$(addprefix ${src.dir}/com/github/lindenb/gatkui/,$(addsuffix .java,GatkUi AbstractGatkUi)) \
 			${this.dir}src/main/generated-code/java/com/github/lindenb/gatkui/AbstractGatkPrograms.java \
 			${this.dir}src/main/generated-code/java/com/github/lindenb/gatkui/GATKVersion.java \
+			${this.dir}src/main/resources/images/splash.png \
 			${gatk.jar}
 	mkdir -p $(dir $@)
 	${JAVAC} -d ${tmp.dir} -g -classpath "${gatk.jar}" -sourcepath "${src.dir}:${this.dir}src/main/generated-code/java" $(filter %.java,$^)
-	echo "Manifest-Version: 1.0" > ${tmp.dir}/META-INF/MANIFEST.tmp
+	cp "${this.dir}src/main/resources/images/splash.png" ${tmp.dir}/META-INF/splash.png
+	echo "Manifest-Version: 1.0" > ${tmp.dir}/META-INF/MANIFEST.tmp 
+	echo "SplashScreen-Image: META-INF/splash.png" >> ${tmp.dir}/META-INF/MANIFEST.tmp
 	echo "Main-Class: com.github.lindenb.gatkui.GatkUi" >> ${tmp.dir}/META-INF/MANIFEST.tmp
 	${JAR} cfm $@ ${tmp.dir}/META-INF/MANIFEST.tmp  -C ${tmp.dir} .
 	#rm -rf ${tmp.dir}
@@ -52,7 +55,7 @@ ${this.dir}src/main/generated-code/java/com/github/lindenb/gatkui/GATKVersion.ja
 ${bin.dir}/gatk-scanengines.jar: \
 			${tmp.dir}/GATK_public.key  \
 			$(addprefix ${src.dir}/com/github/lindenb/gatkui/,$(addsuffix .java,ScanEngines)) \
-			${gatk.jar}
+			${gatk.jar} 
 	mkdir -p $(dir $@) ${tmp.dir}2/META-INF
 	${JAVAC} -d ${tmp.dir}2 -g -classpath "${gatk.jar}" -sourcepath "${src.dir}" $(filter %.java,$^)
 	echo "Manifest-Version: 1.0" > ${tmp.dir}2/META-INF/MANIFEST.tmp
@@ -78,23 +81,31 @@ ${this.dir}src/main/generated-code/json/DepthOfCoverage.json :
 	mkdir -p $(dir $@)
 	curl -Lk ${curl.proxy} -o "$@" "https://www.broadinstitute.org/gatk/gatkdocs/org_broadinstitute_gatk_tools_walkers_coverage_DepthOfCoverage.php.json"
 
-${this.dir}src/main/generated-code/xml/DepthOfCoverage.xml : \
-	${this.dir}src/main/generated-code/json/DepthOfCoverage.json \
-	${bin.dir}/json2xml.jar
+
+${this.dir}src/main/generated-code/xml/DepthOfCoverage.jsonx : \
+		${this.dir}src/main/generated-code/json/DepthOfCoverage.json \
+		${bin.dir}/json2xml.jar
 	mkdir -p $(dir $@)
-	java -jar ${bin.dir}/json2xml.jar $< | xmllint --format --output "$@" -
+	java -jar ${bin.dir}/json2xml.jar $< | xmllint -o "$@" --format -
 	
 	
-x: ${this.dir}src/main/generated-code/xml/DepthOfCoverage.xml
-	xsltproc src/main/resources/xsl/jsonx2program.xsl $<
+${this.dir}src/main/generated-code/xml/DepthOfCoverage.xml : \
+		${this.dir}src/main/resources/xsl/jsonx2program.xsl \
+		${this.dir}src/main/generated-code/xml/DepthOfCoverage.jsonx
+	mkdir -p $(dir $@)
+	xsltproc \
+		--stringparam www "https://www.broadinstitute.org/gatk/gatkdocs/org_broadinstitute_gatk_tools_walkers_coverage_DepthOfCoverage.php" \
+		-o "$@" $^
+	
 
 ${this.dir}src/main/generated-code/java/com/github/lindenb/gatkui/AbstractGatkPrograms.java :  \
 		src/main/resources/xsl/programs2java.xsl \
 		src/main/resources/xsl/commandpreproc.xsl \
-		src/main/resources/xml/programs.xml
+		src/main/resources/xml/programs.xml \
+		${this.dir}src/main/generated-code/xml/DepthOfCoverage.xml
 	mkdir -p $(dir $@)
-	xsltproc -o "$(addsuffix .tmp.xml,$@)" src/main/resources/xsl/commandpreproc.xsl src/main/resources/xml/programs.xml
-	xsltproc --stringparam outdir "$(dir $@)" -o $@ src/main/resources/xsl/programs2java.xsl "$(addsuffix .tmp.xml,$@)"
+	xsltproc --xinclude --path "${this.dir}src/main/generated-code/xml" -o "$(addsuffix .tmp.xml,$@)" ${this.dir}src/main/resources/xsl/commandpreproc.xsl src/main/resources/xml/programs.xml
+	xsltproc --stringparam outdir "$(dir $@)" -o $@ ${this.dir}src/main/resources/xsl/programs2java.xsl "$(addsuffix .tmp.xml,$@)"
 	rm "$(addsuffix .tmp.xml,$@)"
 
 ${tmp.dir}/GATK_public.key : ${gatk.jar}
@@ -102,6 +113,10 @@ ${tmp.dir}/GATK_public.key : ${gatk.jar}
 	unzip -o ${gatk.jar}  -d ${tmp.dir}
 	mv ${tmp.dir}/META-INF/MANIFEST.MF ${tmp.dir}/META-INF/MANIFEST.old
 	touch -c $@
+
+${this.dir}src/main/resources/images/splash.png:
+	mkdir -p $(dir $@)
+	curl -Lk ${curl.proxy} -o "$@" "https://www.broadinstitute.org/gatk/resources/img_shared/logo-gatk-large.png"
 
 clean:
 	rm -rf "${tmp.dir}"
