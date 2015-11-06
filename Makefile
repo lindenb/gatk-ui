@@ -58,9 +58,12 @@ ${bin.dir}/gatk-scanengines.jar: \
 
 ${this.dir}src/main/generated-code/java/com/github/lindenb/gatkui/AbstractGatkPrograms.java :  \
 		src/main/resources/xsl/programs2java.xsl \
+		src/main/resources/xsl/commandpreproc.xsl \
 		src/main/resources/xml/programs.xml
 	mkdir -p $(dir $@)
-	xsltproc --stringparam outdir "$(dir $@)" -o $@ $^
+	xsltproc -o "$(addsuffix .tmp.xml,$@)" src/main/resources/xsl/commandpreproc.xsl src/main/resources/xml/programs.xml
+	xsltproc --stringparam outdir "$(dir $@)" -o $@ src/main/resources/xsl/programs2java.xsl "$(addsuffix .tmp.xml,$@)"
+	rm "$(addsuffix .tmp.xml,$@)"
 
 ${tmp.dir}/GATK_public.key : ${gatk-jar}
 	mkdir -p ${tmp.dir}

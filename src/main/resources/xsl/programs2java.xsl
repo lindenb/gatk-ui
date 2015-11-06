@@ -12,6 +12,7 @@
 </xsl:template>
 
 <xsl:template match="programs">
+<xsl:call-template name="license"/>
 package com.github.lindenb.gatkui;
 
 import javax.swing.*;
@@ -85,6 +86,7 @@ this.<xsl:value-of select="concat('_instance',@name)"/>.savePreferences();
 <xsl:template match="program" >
 <xsl:variable name="filename" select="concat($outdir,'/',@name,'Pane.java')"/>
 <xsl:document href="{$filename}" method="text">
+<xsl:call-template name="license"/>
 package com.github.lindenb.gatkui;
 
 import javax.swing.*;
@@ -154,6 +156,30 @@ public class <xsl:value-of select="concat(@name,'Pane')"/> extends AbstractGatkU
 			return "<xsl:value-of select="@url"/>";
 			}
 	</xsl:if>
+	
+	<xsl:if test="@requires-faidx">
+	@Override
+	public boolean requiresIndexedReference()
+			{
+			return <xsl:value-of select="@requires-faidx"/>;
+			}
+	</xsl:if>
+	
+	<xsl:if test="@requires-pedigree">
+	@Override
+	public boolean requiresPedigree()
+			{
+			return <xsl:value-of select="@requires-pedigree"/>;
+			}
+	</xsl:if>
+	
+	<xsl:if test="@requires-region">
+	@Override
+	public boolean requiresRegion()
+			{
+			return <xsl:value-of select="@requires-region"/>;
+			}
+	</xsl:if>	
 	
 	@Override
 	public String getDescription()
@@ -609,6 +635,34 @@ if(f.getName().toLowerCase().endsWith(".bam"))
 
 <xsl:template match="extension">
 if(f.getName().toLowerCase().endsWith(".<xsl:value-of select="text()"/>".toLowerCase())) return true;
+</xsl:template>
+
+<xsl:template name="license">
+/*
+The MIT License (MIT)
+
+Copyright (c) 2015 Pierre Lindenbaum
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+
+
+*/
 </xsl:template>
 
 

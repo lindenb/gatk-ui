@@ -40,10 +40,7 @@
 		<options>
 			<option opt="-variant" label="Variants" type="input-file" required="true">
 				<description>Input VCF file</description>
-				<filter label="VCF">
-					<extension>vcf</extension>
-					<extension>vcf.gz</extension>
-				</filter>
+				<snippet id="filter-vcf"/>
 			</option>
 		
 			<option opt="-selectexpressions" label="Select Expression" type="string" required="false">
@@ -77,15 +74,12 @@
 	<!-- =================================================================================== -->
 	<!-- =================================================================================== -->
 
-	<program name="PhaseByTransmission">
+	<program name="PhaseByTransmission" requires-pedigree="true">
 		<description>Compute the most likely genotype combination and phasing for trios and parent/child pairs</description>
 		<options>
 			<option opt="-variant" label="Variants" type="input-file" required="true">
 				<description>Input VCF file</description>
-				<filter label="VCF">
-					<extension>vcf</extension>
-					<extension>vcf.gz</extension>
-				</filter>
+				<snippet id="filter-vcf"/>
 			</option>
 
 			<option opt="-FatherAlleleFirst" label="Father Allele First" type="boolean" default="false">

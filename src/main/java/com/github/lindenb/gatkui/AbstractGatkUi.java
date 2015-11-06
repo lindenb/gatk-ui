@@ -1,3 +1,30 @@
+/*
+The MIT License (MIT)
+
+Copyright (c) 2015 Pierre Lindenbaum
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+
+
+
+
+*/
 package com.github.lindenb.gatkui;
 
 import java.awt.BorderLayout;
@@ -137,7 +164,17 @@ public class AbstractGatkUi extends JFrame
 				doMenuClose();
 				}
 			});
-		
+		addWindowListener(new WindowAdapter()
+			{
+			@Override
+			public void windowOpened(WindowEvent e) {
+				LOG.info("GATK-ui: Pierre Lindenbaum 2015\n"
+						+ "Version: "+GATKVersion.getVersion()+"\n"
+						+ "GATK is a product from the Broad Institute."
+						);
+				removeWindowListener(this);
+				}
+			});
 		 final JMenuBar menubar= new JMenuBar();
 		 this.setJMenuBar(menubar);
 		 JMenu menu = new JMenu("File");
@@ -216,9 +253,7 @@ public class AbstractGatkUi extends JFrame
 					{
 					return false;
 					}
-				File fai =new File(f.getParentFile(), f.getName()+".fai");
-				if(fai.exists()) return true;
-				return false;
+				return true;
 				}
 			});
 		loadPreference(this.REFFileChooser, GATK_REF_PATH_PREF);
@@ -378,6 +413,10 @@ public class AbstractGatkUi extends JFrame
 		return this._preferences;
 		}
 	
+	/**
+	 * AbstracCommandPane
+	 *
+	 */
 	protected abstract static class AbstracCommandPane  extends JPanel
 		{
 		JPanel bottomPane;
@@ -443,17 +482,52 @@ public class AbstractGatkUi extends JFrame
 			}
 		public abstract String getCommandName();
 		public abstract String getDescription();
+		
+		/** get online  broad GATK url for this document */
 		public String getOnlineUrl()
 			{
 			return null;
 			}
 		public abstract void savePreferences();
 		
+		public boolean requiresIndexedReference()
+			{
+			return true;
+			}
+		/** this command  requires a pedigree */
+		public boolean requiresPedigree()
+			{
+			return false;
+			}
+		
+		/** this command  requires a region -L ? */
+		public boolean requiresRegion()
+			{
+			return false;
+			}
+	
+		/** returns an error message or null */
 		public String canBuildCommandLine()
 			{
-			if(owner.REFFileChooser.getFile()==null)
+			File f = owner.REFFileChooser.getFile(); 
+			if(f==null)
 				{
 				return "REF not defined";
+				}
+			if(this.requiresIndexedReference())
+				{
+				File fai =new File(f.getParentFile(), f.getName()+".fai");
+				if(fai.exists()) return "REF needs to be indexed but cannot find "+fai;
+				}
+			if(this.requiresPedigree() && owner.pedigreeFileChooser.getFile()==null)
+				{
+				return getCommandName()+" requires a pedigree. See tab 'GATK'";
+				}
+			if(this.requiresRegion() && 
+				owner.captureFileChooser.getFile()==null &&
+				owner.captureRegionField.getText().trim().isEmpty())
+				{
+				return getCommandName()+" requires a region. See tab 'GATK'";				
 				}
 			return null;
 			}
@@ -492,7 +566,10 @@ public class AbstractGatkUi extends JFrame
 		}
 	
 	
-	
+	/**
+	 * GATKRunner
+	 *
+	 */
 	private static class GATKRunner extends Thread
 		{
 		private AbstractGatkUi owner;
