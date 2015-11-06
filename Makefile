@@ -8,6 +8,9 @@ ifneq ($(realpath local.mk),)
 include $(realpath local.mk)
 endif
 
+# proxy for curl, etc...
+curl.proxy=$(if ${http.proxy.host}${http.proxy.port},-x "${http.proxy.host}:${http.proxy.port}",)
+
 
 EMPTY :=
 SPACE := $(EMPTY) $(EMPTY)
@@ -16,23 +19,26 @@ src.dir=${this.dir}src/main/java
 tmp.dir=${this.dir}tmp
 JAVAC?=javac
 JAR?=jar
-gatk-jar?=/commun/data/packages/gatk/3.3.0/GenomeAnalysisTK.jar
+
+ifeq ($(gatk.jar),) 
+$(error variable gatk.jar is not defined)
+endif
 
 
 
 all: ${bin.dir}/gatk-ui.jar programs.tmp.xml
 
 programs.tmp.xml : ${bin.dir}/gatk-scanengines.jar 
-	java -jar ${bin.dir}/gatk-scanengines.jar ${gatk-jar} 2> $(addsuffix .err,$@) | xmllint --format -o $@ -
+	java -jar ${bin.dir}/gatk-scanengines.jar ${gatk.jar} 2> $(addsuffix .err,$@) | xmllint --format -o $@ -
 
 ${bin.dir}/gatk-ui.jar : \
 			${tmp.dir}/GATK_public.key  \
 			$(addprefix ${src.dir}/com/github/lindenb/gatkui/,$(addsuffix .java,GatkUi AbstractGatkUi)) \
 			${this.dir}src/main/generated-code/java/com/github/lindenb/gatkui/AbstractGatkPrograms.java \
 			${this.dir}src/main/generated-code/java/com/github/lindenb/gatkui/GATKVersion.java \
-			${gatk-jar}
+			${gatk.jar}
 	mkdir -p $(dir $@)
-	${JAVAC} -d ${tmp.dir} -g -classpath "${gatk-jar}" -sourcepath "${src.dir}:${this.dir}src/main/generated-code/java" $(filter %.java,$^)
+	${JAVAC} -d ${tmp.dir} -g -classpath "${gatk.jar}" -sourcepath "${src.dir}:${this.dir}src/main/generated-code/java" $(filter %.java,$^)
 	echo "Manifest-Version: 1.0" > ${tmp.dir}/META-INF/MANIFEST.tmp
 	echo "Main-Class: com.github.lindenb.gatkui.GatkUi" >> ${tmp.dir}/META-INF/MANIFEST.tmp
 	${JAR} cfm $@ ${tmp.dir}/META-INF/MANIFEST.tmp  -C ${tmp.dir} .
@@ -46,14 +52,37 @@ ${this.dir}src/main/generated-code/java/com/github/lindenb/gatkui/GATKVersion.ja
 ${bin.dir}/gatk-scanengines.jar: \
 			${tmp.dir}/GATK_public.key  \
 			$(addprefix ${src.dir}/com/github/lindenb/gatkui/,$(addsuffix .java,ScanEngines)) \
-			${gatk-jar}
+			${gatk.jar}
 	mkdir -p $(dir $@) ${tmp.dir}2/META-INF
-	${JAVAC} -d ${tmp.dir}2 -g -classpath "${gatk-jar}" -sourcepath "${src.dir}" $(filter %.java,$^)
+	${JAVAC} -d ${tmp.dir}2 -g -classpath "${gatk.jar}" -sourcepath "${src.dir}" $(filter %.java,$^)
 	echo "Manifest-Version: 1.0" > ${tmp.dir}2/META-INF/MANIFEST.tmp
 	echo "Main-Class: com.github.lindenb.gatkui.ScanEngines" >> ${tmp.dir}2/META-INF/MANIFEST.tmp
 	echo "Class-Path: $(realpath $(filter %.jar,$^)) $@" | fold -w 71 | awk '{printf("%s%s\n",(NR==1?"": " "),$$0);}' >>  ${tmp.dir}2/META-INF/MANIFEST.tmp
 	${JAR} cfm $@ ${tmp.dir}2/META-INF/MANIFEST.tmp  -C ${tmp.dir}2 .
 	rm -rf ${tmp.dir}2
+
+${bin.dir}/json2xml.jar: \
+			${tmp.dir}/GATK_public.key  \
+			$(addprefix ${src.dir}/com/github/lindenb/gatkui/,$(addsuffix .java,Json2Xml)) \
+			${gatk.jar}
+	mkdir -p $(dir $@) ${tmp.dir}2/META-INF
+	${JAVAC} -d ${tmp.dir}2 -g -classpath "${gatk.jar}" -sourcepath "${src.dir}" $(filter %.java,$^)
+	echo "Manifest-Version: 1.0" > ${tmp.dir}2/META-INF/MANIFEST.tmp
+	echo "Main-Class: com.github.lindenb.gatkui.Json2Xml" >> ${tmp.dir}2/META-INF/MANIFEST.tmp
+	echo "Class-Path: $(realpath $(filter %.jar,$^)) $@" | fold -w 71 | awk '{printf("%s%s\n",(NR==1?"": " "),$$0);}' >>  ${tmp.dir}2/META-INF/MANIFEST.tmp
+	${JAR} cfm $@ ${tmp.dir}2/META-INF/MANIFEST.tmp  -C ${tmp.dir}2 .
+	rm -rf ${tmp.dir}2
+
+
+${this.dir}src/main/generated-code/json/DepthOfCoverage.json :
+	mkdir -p $(dir $@)
+	curl -Lk ${curl.proxy} -o "$@" "https://www.broadinstitute.org/gatk/gatkdocs/org_broadinstitute_gatk_tools_walkers_coverage_DepthOfCoverage.php.json"
+
+${this.dir}src/main/generated-code/xml/DepthOfCoverage.xml : \
+	${this.dir}src/main/generated-code/json/DepthOfCoverage.json \
+	${bin.dir}/json2xml.jar
+	mkdir -p $(dir $@)
+	java -jar ${bin.dir}/json2xml.jar $< | xmllint --format --output "$@" -
 
 
 ${this.dir}src/main/generated-code/java/com/github/lindenb/gatkui/AbstractGatkPrograms.java :  \
@@ -65,9 +94,9 @@ ${this.dir}src/main/generated-code/java/com/github/lindenb/gatkui/AbstractGatkPr
 	xsltproc --stringparam outdir "$(dir $@)" -o $@ src/main/resources/xsl/programs2java.xsl "$(addsuffix .tmp.xml,$@)"
 	rm "$(addsuffix .tmp.xml,$@)"
 
-${tmp.dir}/GATK_public.key : ${gatk-jar}
+${tmp.dir}/GATK_public.key : ${gatk.jar}
 	mkdir -p ${tmp.dir}
-	unzip -o ${gatk-jar}  -d ${tmp.dir}
+	unzip -o ${gatk.jar}  -d ${tmp.dir}
 	mv ${tmp.dir}/META-INF/MANIFEST.MF ${tmp.dir}/META-INF/MANIFEST.old
 	touch -c $@
 
