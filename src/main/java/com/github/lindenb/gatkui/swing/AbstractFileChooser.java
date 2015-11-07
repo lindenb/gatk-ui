@@ -15,11 +15,10 @@ import javax.swing.JTextField;
 public abstract class AbstractFileChooser extends AbstractFilterChooser
 	{
 	private JTextField textField;
-	private File file;
 	AbstractFileChooser()
 		{
 		this.textField = new JTextField(50);
-		this.textField.setEditable(false);
+		this.textField.setEditable(isTextFieldEditable());
 		this.add(this.textField,BorderLayout.CENTER);
 		JPanel p = new JPanel(new FlowLayout());
 		this.add(p,BorderLayout.EAST);
@@ -28,29 +27,49 @@ public abstract class AbstractFileChooser extends AbstractFilterChooser
 				@Override
 				public void actionPerformed(ActionEvent e)
 					{
+					File file = getFile();
 					File dir=(file!=null?file.getParentFile():null);
 					JFileChooser chooser = new JFileChooser(dir);
 					if(getFilter()!=null) chooser.setFileFilter(getFilter());
 					if(select(chooser)!=JFileChooser.APPROVE_OPTION) return;
 					if(chooser.getSelectedFile()==null) return;
-					setFile(chooser.getSelectedFile());
+					setText(chooser.getSelectedFile().getPath());
 					}
 				}));
 		p.add(new JButton(new AbstractAction("Clear")
 			{
 			@Override
 			public void actionPerformed(ActionEvent e) {
-				setFile(null);
+				setText(null);
 			}
 			}));
 		}
 	protected abstract int select(final JFileChooser c);
 	
-	public File getFile() {
-		return file;
-	}
-	public void setFile(File file) {
-		this.file = file;
+	public String getText()
+		{
+		return this.textField.getText().trim();
+		}
+	
+	public boolean isTextFieldEditable()
+		{
+		return false;
+		}
+	
+	public File getFile()
+		{
+		String s= this.getText();
+		try
+			{
+			return (s==null?null:new File(s));
+			}
+		catch(Exception err)
+			{
+			return null;
+			}
+		}
+	
+	public void setText(String file) {
 		if(file==null)
 			{
 			this.textField.setText("");	
@@ -58,9 +77,17 @@ public abstract class AbstractFileChooser extends AbstractFilterChooser
 			}
 		else
 			{
-			this.textField.setText(file.getPath());
-			this.textField.setToolTipText(file.getPath());
+			this.textField.setText(file);
+			this.textField.setToolTipText(file);
 			this.textField.setCaretPosition(0);
 			}
 		}
+	
+	@Override
+	public void setToolTipText(String arg0)
+		{
+		this.textField.setToolTipText(arg0);
+		super.setToolTipText(arg0);
+		}
+
 }

@@ -50,7 +50,6 @@ import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.JTabbedPane;
 import javax.swing.JTextArea;
-import javax.swing.JTextField;
 import javax.swing.SwingUtilities;
 import javax.swing.border.EmptyBorder;
 import javax.swing.border.TitledBorder;
@@ -72,7 +71,7 @@ import com.github.lindenb.gatkui.swing.MultipleStringChooser;
 import com.github.lindenb.gatkui.swing.MyLayout;
 
 @SuppressWarnings("serial")
-public class AbstractGatkUi extends JFrame
+public abstract class AbstractGatkUi extends JFrame
 	{
 	protected Thread runningThread = null;
 	@SuppressWarnings("unused")
@@ -81,9 +80,8 @@ public class AbstractGatkUi extends JFrame
 	protected Preferences _preferences = null;
 	private JTextComponent logArea;
 	protected InputFileChooser REFFileChooser;
-	protected InputFileChooser captureFileChooser;
+	protected InputFileChooser captureFileOrRegionChooser;
 	protected InputFileChooser pedigreeFileChooser;
-	private JTextField captureRegionField;
 	private JTabbedPane tabbedPane=null;
 	JMenu engineMenu;
 	
@@ -224,7 +222,6 @@ public class AbstractGatkUi extends JFrame
 	
 	private static final String GATK_REF_PATH_PREF="gatk.ref.path";
 	private static final String GATK_REGFILE_PREF="gatk.regfile";
-	private static final String GATK_REG_PREF="gatk.reg";
 	private static final String GATK_PED_PREF="gatk.ped";
 	
 	
@@ -258,25 +255,20 @@ public class AbstractGatkUi extends JFrame
 		pane2.add(this.REFFileChooser);
 		
 		JLabel lbl = new JLabel("Region BED:",JLabel.TRAILING);
-		lbl.setToolTipText(" One or more genomic intervals over which to operate");
+		lbl.setToolTipText("BED region or One or more genomic intervals over which to operate");
 		pane2.add(lbl);
 				
-		this.captureFileChooser = new InputFileChooser();
-		this.captureFileChooser.setFilter("Region", "bed");
-		loadPreference(this.captureFileChooser, GATK_REGFILE_PREF);
-		pane2.add(this.captureFileChooser);
+		this.captureFileOrRegionChooser = new InputFileChooser()
+			{
+			public boolean isTextFieldEditable()
+				{
+				return true;
+				}
+			};
+		this.captureFileOrRegionChooser.setFilter("Region", "bed");
+		loadPreference(this.captureFileOrRegionChooser, GATK_REGFILE_PREF);
+		pane2.add(this.captureFileOrRegionChooser);
 		
-		
-		pane2.add(new JLabel("or ...",JLabel.CENTER));
-		pane2.add(new JLabel());
-		
-		lbl =new JLabel("Region:",JLabel.TRAILING);
-		lbl.setToolTipText(" One or more genomic intervals over which to operate");
-		pane2.add(lbl);
-		this.captureRegionField=new JTextField(50);
-		loadPreference(this.captureFileChooser, GATK_REG_PREF);
-		lbl.setLabelFor(this.captureRegionField);
-		pane2.add(this.captureRegionField);
 		
 		
 		lbl=new JLabel("Pedigree:",JLabel.TRAILING);
@@ -291,10 +283,12 @@ public class AbstractGatkUi extends JFrame
 		return pane2;
 		}
 	
+	public abstract CommandLineGATKPane getCommandLineGATKPane();
+	
 	public void loadPreference(AbstractFileChooser component,String key)
 		{
 		String path=getPreferences().get(key,null);
-		if(path!=null &&  !path.isEmpty()) component.setFile(new File(path));
+		if(path!=null &&  !path.isEmpty()) component.setText(path);
 		}
 	
 	public void savePreference(AbstractFileChooser component,String key)
@@ -416,8 +410,7 @@ public class AbstractGatkUi extends JFrame
 		{
 		savePreference(this.REFFileChooser, GATK_REF_PATH_PREF);
 		savePreference(this.pedigreeFileChooser, GATK_PED_PREF);
-		savePreference(this.captureFileChooser, GATK_REGFILE_PREF);
-		savePreference(this.captureRegionField, GATK_REG_PREF);
+		savePreference(this.captureFileOrRegionChooser, GATK_REGFILE_PREF);
 		
 		try {
 			LOG.debug("flush pref");
@@ -459,8 +452,12 @@ public class AbstractGatkUi extends JFrame
 			this.owner=ownerui;
 			setBorder(new EmptyBorder(5, 5, 5, 5));
 			this.bottomPane = new JPanel(new FlowLayout(FlowLayout.TRAILING));
-			this.add(bottomPane,BorderLayout.SOUTH);
-			cancelAction = new AbstractAction("Cancel")
+			if(!getCommandName().equals("CommandLineGATK"))
+				{
+				this.add(bottomPane,BorderLayout.SOUTH);
+				}
+			
+			this.cancelAction = new AbstractAction("Cancel")
 				{
 				@Override
 				public void actionPerformed(ActionEvent e) {
@@ -554,8 +551,7 @@ public class AbstractGatkUi extends JFrame
 				return getCommandName()+" requires a pedigree. See tab 'GATK'";
 				}
 			if(this.requiresRegion() && 
-				owner.captureFileChooser.getFile()==null &&
-				owner.captureRegionField.getText().trim().isEmpty())
+				owner.captureFileOrRegionChooser.getText().trim().isEmpty())
 				{
 				return getCommandName()+" requires a region. See tab 'GATK'";				
 				}
@@ -576,15 +572,10 @@ public class AbstractGatkUi extends JFrame
 				L.add("-R");
 				L.add(owner.REFFileChooser.getFile().getPath());
 				}
-			if(owner.captureFileChooser.getFile()!=null)
+			if(!owner.captureFileOrRegionChooser.getText().isEmpty())
 				{
 				L.add("-L");
-				L.add(owner.captureFileChooser.getFile().getPath());
-				}
-			else if(!owner.captureRegionField.getText().trim().isEmpty())
-				{
-				L.add("-L");
-				L.add(owner.captureRegionField.getText().trim());
+				L.add(owner.captureFileOrRegionChooser.getText());
 				}
 
 			if(owner.pedigreeFileChooser.getFile()!=null)

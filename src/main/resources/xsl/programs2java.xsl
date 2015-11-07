@@ -37,28 +37,11 @@ public abstract class AbstractGatkPrograms extends AbstractGatkUi
 		{
 		super.buildTabbedPane(tabbedPane);
 		AbstractAction action=null;
-		<xsl:for-each select="program[not(@disabled='true')]">
+		<xsl:apply-templates select="program[@name='CommandLineGATK']" mode="new.instance"/>
+		
+		<xsl:for-each select="program[not(@disabled='true') and @name!='CommandLineGATK']">
 		 <xsl:sort select="@name" />
-		
-		final int <xsl:value-of select="generate-id(.)"/>idx=  tabbedPane.getTabCount();
-		
-		tabbedPane.addTab("<xsl:value-of select="@name"/>",
-			(this.<xsl:value-of select="concat('_instance',@name)"/> = new <xsl:value-of select="concat(@name,'Pane')"/>(this))
-			);
-		
-		action  = new AbstractAction("<xsl:value-of select="@name"/>")
-			{
-			@Override
-			public void actionPerformed(final java.awt.event.ActionEvent evt)
-				{
-				tabbedPane.setSelectedIndex(<xsl:value-of select="generate-id(.)"/>idx);
-				}
-			};
-		action.putValue(AbstractAction.SHORT_DESCRIPTION,this.<xsl:value-of select="concat('_instance',@name)"/>.getDescription());
-		
-		this.engineMenu.add(new JMenuItem(action));
-	
-			
+		 <xsl:apply-templates select="." mode="new.instance"/>
 		</xsl:for-each>
 		}
 	@Override
@@ -68,11 +51,38 @@ public abstract class AbstractGatkPrograms extends AbstractGatkUi
 		super.savePreferences();
 		}
 	
+	@Override
+	public CommandLineGATKPane getCommandLineGATKPane()
+		{
+		return this.<xsl:value-of select="concat('_instance',program[@name='CommandLineGATK']/@name)"/>;
+		}
+
+	
 	<xsl:apply-templates select="program[not(@disabled='true')]"/>
 	}
 
 </xsl:template>
 
+<xsl:template match="program" mode="new.instance">
+		/** BEGIN <xsl:value-of select="@name"/> */
+		final int <xsl:value-of select="generate-id(.)"/>idx=  tabbedPane.getTabCount();
+		
+		tabbedPane.addTab("<xsl:value-of select="@name"/>",
+			(this.<xsl:value-of select="concat('_instance',@name)"/> = new <xsl:value-of select="concat(@name,'Pane')"/>(this))
+			);
+		action  = new AbstractAction("<xsl:value-of select="@name"/>")
+			{
+			@Override
+			public void actionPerformed(final java.awt.event.ActionEvent evt)
+				{
+				tabbedPane.setSelectedIndex(<xsl:value-of select="generate-id(.)"/>idx);
+				}
+			};
+		action.putValue(AbstractAction.SHORT_DESCRIPTION,this.<xsl:value-of select="concat('_instance',@name)"/>.getDescription());		
+		this.engineMenu.add(new JMenuItem(action));
+		/** END <xsl:value-of select="@name"/> */
+		
+</xsl:template>
 
 <xsl:template match="program" mode="declare">
 protected <xsl:value-of select="concat(@name,'Pane _instance',@name)"/>;
@@ -220,35 +230,31 @@ public class <xsl:value-of select="concat(@name,'Pane')"/> extends AbstractGatkU
 </xsl:template>
 
 <xsl:template match="option" mode="declare">
+	<xsl:variable name="s" select="translate(@label,'-_ ','')"/>
+	<xsl:variable name="classname">
 	<xsl:choose>
-		<xsl:when test="@type='input-files'">
-			MultipleFileChooser <xsl:value-of select="generate-id(.)"/> = null;
-		</xsl:when>
-		<xsl:when test="@type='input-file'">
-			InputFileChooser <xsl:value-of select="generate-id(.)"/> = null;
-		</xsl:when>
-		<xsl:when test="@type='output-file'">
-			OutputFileChooser <xsl:value-of select="generate-id(.)"/> = null;
-		</xsl:when>
-		<xsl:when test="@type='boolean'">
-			JCheckBox <xsl:value-of select="generate-id(.)"/> = null;
-		</xsl:when>
-		<xsl:when test="@type='enum' ">
-			JComboBox&lt;String&gt; <xsl:value-of select="generate-id(.)"/> = null;
-		</xsl:when>
-		<xsl:when test="@type='int-list' ">
-			MultipleStringChooser <xsl:value-of select="generate-id(.)"/> = null;
-		</xsl:when>
-		<xsl:when test="@type='int' or @type='double'">
-			JTextField <xsl:value-of select="generate-id(.)"/> = null;
-		</xsl:when>
-		<xsl:when test="@type='string'">
-			JTextComponent <xsl:value-of select="generate-id(.)"/> = null;
-		</xsl:when>
+		<xsl:when test="@type='input-files'">MultipleFileChooser</xsl:when>
+		<xsl:when test="@type='input-file'">InputFileChooser</xsl:when>
+		<xsl:when test="@type='output-file'">OutputFileChooser</xsl:when>
+		<xsl:when test="@type='boolean'">JCheckBox</xsl:when>
+		<xsl:when test="@type='enum' ">JComboBox&lt;String&gt;</xsl:when>
+		<xsl:when test="@type='int-list' ">MultipleStringChooser</xsl:when>
+		<xsl:when test="@type='int' or @type='double'">JTextField</xsl:when>
+		<xsl:when test="@type='string'">JTextComponent</xsl:when>
 		<xsl:otherwise>
 			<xsl:message>option:declare unknow <xsl:value-of select="@type"/></xsl:message>
 		</xsl:otherwise>
 	</xsl:choose>
+	</xsl:variable>
+	
+	private <xsl:value-of select="$classname"/><xsl:text> </xsl:text><xsl:value-of select="generate-id(.)"/>= null ;
+	
+	/** getter for <xsl:value-of select="@label"/> */
+	public <xsl:value-of select="$classname"/> get<xsl:value-of select="translate(substring($s,1,1),'abcdefghijklmnopqrstuvwxyz','ABCDEFGHIJKLMNOPQRSTUVWXYZ')"/><xsl:value-of select="substring($s,2)"/>Option()
+		{
+		return this.<xsl:value-of select="generate-id(.)"/>;
+		}
+	
 </xsl:template>
 
 <xsl:template match="option">

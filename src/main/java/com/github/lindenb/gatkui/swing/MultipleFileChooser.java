@@ -28,6 +28,7 @@ import java.awt.BorderLayout;
 import java.awt.FlowLayout;
 import java.awt.event.ActionEvent;
 import java.io.File;
+import java.io.PrintWriter;
 import java.util.HashSet;
 import java.util.Set;
 
@@ -36,8 +37,11 @@ import javax.swing.DefaultListModel;
 import javax.swing.JButton;
 import javax.swing.JFileChooser;
 import javax.swing.JList;
+import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
+import javax.swing.event.ListDataEvent;
+import javax.swing.event.ListDataListener;
 import javax.swing.event.ListSelectionEvent;
 import javax.swing.event.ListSelectionListener;
 
@@ -48,6 +52,7 @@ public class MultipleFileChooser extends AbstractFilterChooser
 	private JList<File> fileList;
 	private AbstractAction addAction;
 	private AbstractAction rmAction;
+	private AbstractAction saveListAction;
 	public MultipleFileChooser()
 		{
 		this.fileList = new JList<>(new DefaultListModel<File>());
@@ -69,7 +74,7 @@ public class MultipleFileChooser extends AbstractFilterChooser
 				addFiles(chooser.getSelectedFiles());
 				}
 			};
-		this.addAction.putValue(AbstractAction.LONG_DESCRIPTION, "Add a File");
+		this.addAction.putValue(AbstractAction.SHORT_DESCRIPTION, "Add a File");
 		this.rmAction = new AbstractAction("[-]")
 			{
 			@Override
@@ -82,17 +87,77 @@ public class MultipleFileChooser extends AbstractFilterChooser
 					}
 				}	
 			};
-		this.rmAction.putValue(AbstractAction.LONG_DESCRIPTION, "Remove selected File");
+		this.rmAction.putValue(AbstractAction.SHORT_DESCRIPTION, "Remove selected File");
 		this.rmAction.setEnabled(false);
+		
+		
+		this.saveListAction = new AbstractAction("[!]")
+			{
+			@Override
+			public void actionPerformed(ActionEvent e) {
+				try
+					{
+					JFileChooser fc=new JFileChooser();
+					if(fc.showSaveDialog(MultipleFileChooser.this)!=JFileChooser.APPROVE_OPTION)
+						{
+						return;
+						}
+					final File fs = fc.getSelectedFile();
+					if(fs.exists() && JOptionPane.showConfirmDialog(MultipleFileChooser.this, fc.toString()+" exits. Overwrite ?",
+							"Overwrite",JOptionPane.OK_CANCEL_OPTION,JOptionPane.WARNING_MESSAGE,null)!=JOptionPane.CANCEL_OPTION)
+						{
+						return;
+						}
+					PrintWriter pw= new PrintWriter(fs);
+					for(int i=0;i< fileList.getModel().getSize();++i)
+						{
+						pw.write(fileList.getModel().getElementAt(i).getPath());
+						}
+					pw.flush();
+					pw.close();
+					}
+				catch (Exception e2)
+					{
+					e2.printStackTrace();
+					}
+				}	
+			};
+			this.saveListAction.putValue(AbstractAction.LONG_DESCRIPTION, "Save Current List As...");
+			this.saveListAction.putValue(AbstractAction.SHORT_DESCRIPTION, "Save Current List As...");
+		this.saveListAction.setEnabled(false);
+		
 		this.fileList.getSelectionModel().addListSelectionListener(new ListSelectionListener()
 				{
 				@Override
 				public void valueChanged(ListSelectionEvent e) {
-					rmAction.setEnabled(!fileList.isSelectionEmpty());
+				rmAction.setEnabled(!fileList.isSelectionEmpty());
 				}
 			});
+		
+		this.fileList.getModel().addListDataListener(new ListDataListener()
+			{
+			@Override
+			public void intervalRemoved(ListDataEvent arg0)
+				{	
+				contentsChanged(arg0);
+				}
+			
+			@Override
+			public void intervalAdded(ListDataEvent arg0)
+				{
+				contentsChanged(arg0);
+				}
+			
+			@Override
+			public void contentsChanged(ListDataEvent arg0)
+				{
+				saveListAction.setEnabled(fileList.getModel().getSize()>0);
+				}
+			});
+		
 		top.add(new JButton(addAction));
 		top.add(new JButton(rmAction));
+		top.add(new JButton(saveListAction));
 		
 		JScrollPane scroll = new JScrollPane(this.fileList);
 		this.add(scroll,BorderLayout.CENTER);

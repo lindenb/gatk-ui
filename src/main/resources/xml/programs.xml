@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <programs xmlns:xi="http://www.w3.org/2001/XInclude">
-	
+
+	<xi:include href="CommandLineGATK.xml"/>	
 	<xi:include href="DepthOfCoverage.xml"/>
 
 	<program name="DepthOfCoverage00" disabled="true">

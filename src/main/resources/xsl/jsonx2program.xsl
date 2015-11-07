@@ -73,6 +73,7 @@ SOFTWARE.
 					</filter>
 				</option>
 		</xsl:when>
+		<xsl:when test="$programName = 'CommandLineGATK' "></xsl:when>
 		<xsl:otherwise>
 			<xsl:message terminate="yes">Unknown walkertype <xsl:value-of select="j:string[@name='walkertype']"/></xsl:message>
 		</xsl:otherwise>
@@ -86,6 +87,10 @@ SOFTWARE.
 <xsl:variable name="type0" select="j:string[@name='type']/text()"/>
 <xsl:variable name="type">
 	<xsl:choose>
+		<xsl:when test="$programName = 'CommandLineGATK' and j:string[@name='name'] = '--analysis_type' ">
+			<xsl:text></xsl:text>
+		</xsl:when>
+	
 		<xsl:when test="count(j:array[@name='options']/j:object)&gt;0">
 			<xsl:text>enum</xsl:text>
 		</xsl:when>
@@ -110,6 +115,7 @@ SOFTWARE.
 		<xsl:when test="$type0 = 'RodBinding[VariantContext]'">
 			<xsl:text>output-file</xsl:text>
 		</xsl:when>
+
 		
 		<xsl:otherwise>
 			<xsl:message terminate="no">#### <xsl:value-of select="$type0"/></xsl:message>
@@ -192,7 +198,7 @@ SOFTWARE.
   			<xsl:attribute name="value">
   			<xsl:value-of select="j:string[@name='name']"/>
   			</xsl:attribute>
-			<description><xsl:apply-templates select="j:string[@name='summary']"/></description>  			
+			<description><xsl:value-of select="translate(j:string[@name='summary'],'&#13;&#10;','  ')"/></description>  			
   		</item>
   	</xsl:for-each>
   </enum>
