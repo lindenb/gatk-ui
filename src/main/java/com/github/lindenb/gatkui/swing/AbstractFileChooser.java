@@ -61,7 +61,7 @@ public abstract class AbstractFileChooser extends AbstractFilterChooser
 		String s= this.getText();
 		try
 			{
-			return (s==null?null:new File(s));
+			return (s==null || s.trim().isEmpty()?null:new File(s));
 			}
 		catch(Exception err)
 			{

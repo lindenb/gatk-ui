@@ -84,6 +84,7 @@ SOFTWARE.
 </xsl:template>
 
 <xsl:template match="j:object"  mode="argument">
+<xsl:variable name="optName" select="j:string[@name='name']"/>
 <xsl:variable name="type0" select="j:string[@name='type']/text()"/>
 <xsl:variable name="type">
 	<xsl:choose>
@@ -129,11 +130,11 @@ SOFTWARE.
 <option>
 
 <xsl:attribute name="opt">
-	<xsl:value-of select="substring(j:string[@name='name'],2)"/>
+	<xsl:value-of select="substring($optName,2)"/>
 </xsl:attribute>
 
 <xsl:attribute name="label">
-	<xsl:value-of select="translate(j:string[@name='name'],'-','')"/>
+	<xsl:value-of select="translate($optName,'-','')"/>
 </xsl:attribute>
 
 <xsl:attribute name="type">
@@ -183,6 +184,14 @@ SOFTWARE.
 			<extension>vcf</extension>
 		</xsl:when>
 	</xsl:choose>
+	
+	<xsl:if test="$programName = 'CommandLineGATK' and  $optName = '--reference_sequence' ">
+		<filter label="Fasta">
+			<extension>fa</extension>
+			<extension>fasta</extension>
+		</filter>
+	</xsl:if>
+	
 </option>
 </xsl:when>
 <xsl:otherwise>

@@ -32,6 +32,7 @@ import java.awt.event.ActionEvent;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
 import java.io.File;
+import java.io.StringWriter;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -55,6 +56,8 @@ import javax.swing.border.EmptyBorder;
 import javax.swing.border.TitledBorder;
 import javax.swing.text.Document;
 import javax.swing.text.JTextComponent;
+import javax.xml.stream.XMLOutputFactory;
+import javax.xml.stream.XMLStreamWriter;
 
 import org.apache.log4j.AppenderSkeleton;
 import org.apache.log4j.Logger;
@@ -79,9 +82,9 @@ public abstract class AbstractGatkUi extends JFrame
 	protected static final Logger LOG = CommandLineUtils.getStingLogger();
 	protected Preferences _preferences = null;
 	private JTextComponent logArea;
-	protected InputFileChooser REFFileChooser;
-	protected InputFileChooser captureFileOrRegionChooser;
-	protected InputFileChooser pedigreeFileChooser;
+	//protected InputFileChooser REFFileChooser;
+	//protected InputFileChooser captureFileOrRegionChooser;
+	//protected InputFileChooser pedigreeFileChooser;
 	private JTabbedPane tabbedPane=null;
 	JMenu engineMenu;
 	
@@ -217,14 +220,14 @@ public abstract class AbstractGatkUi extends JFrame
 	
 	protected void buildTabbedPane(JTabbedPane tabbedPane)
 		{
-		tabbedPane.addTab("GATK", builGatkTab());
+		//tabbedPane.addTab("GATK", builGatkTab());
 		}
 	
-	private static final String GATK_REF_PATH_PREF="gatk.ref.path";
-	private static final String GATK_REGFILE_PREF="gatk.regfile";
-	private static final String GATK_PED_PREF="gatk.ped";
+	//private static final String GATK_REF_PATH_PREF="gatk.ref.path";
+	//private static final String GATK_REGFILE_PREF="gatk.regfile";
+	//private static final String GATK_PED_PREF="gatk.ped";
 	
-	
+	/*
 	public JPanel builGatkTab()
 		{
 		JPanel pane2 = new JPanel(new MyLayout());
@@ -281,7 +284,7 @@ public abstract class AbstractGatkUi extends JFrame
 		
 		
 		return pane2;
-		}
+		}*/
 	
 	public abstract CommandLineGATKPane getCommandLineGATKPane();
 	
@@ -408,9 +411,9 @@ public abstract class AbstractGatkUi extends JFrame
 	
 	protected void savePreferences()
 		{
-		savePreference(this.REFFileChooser, GATK_REF_PATH_PREF);
-		savePreference(this.pedigreeFileChooser, GATK_PED_PREF);
-		savePreference(this.captureFileOrRegionChooser, GATK_REGFILE_PREF);
+		//savePreference(this.REFFileChooser, GATK_REF_PATH_PREF);
+		//savePreference(this.pedigreeFileChooser, GATK_PED_PREF);
+		//savePreference(this.captureFileOrRegionChooser, GATK_REGFILE_PREF);
 		
 		try {
 			LOG.debug("flush pref");
@@ -536,6 +539,7 @@ public abstract class AbstractGatkUi extends JFrame
 		/** returns an error message or null */
 		public String canBuildCommandLine()
 			{
+			/*
 			File f = owner.REFFileChooser.getFile(); 
 			if(f==null)
 				{
@@ -555,14 +559,25 @@ public abstract class AbstractGatkUi extends JFrame
 				{
 				return getCommandName()+" requires a region. See tab 'GATK'";				
 				}
+			*/
 			return null;
 			}
+		
 		
 		public List<String> buildCommandLine()
 			{
 			List<String> L = new ArrayList<>();
-			L.add("-T");
-			L.add(getCommandName());
+			
+
+			if( owner.getCommandLineGATKPane()!=this)
+				{
+				/** add command name */
+				L.add("-T");
+				L.add(getCommandName());
+
+				L.addAll(this.owner.getCommandLineGATKPane().buildCommandLine());
+				}
+			/*
 			if(owner.REFFileChooser.getFile()==null)
 				{
 				LOG.error("REF not defined");
@@ -583,6 +598,7 @@ public abstract class AbstractGatkUi extends JFrame
 				L.add("-ped");
 				L.add(owner.pedigreeFileChooser.getFile().getPath());
 				}
+				*/
 			return L;
 			}
 		
