@@ -238,11 +238,12 @@ public class <xsl:value-of select="concat(@name,'Pane')"/> extends AbstractGatkU
 		<xsl:when test="@type='output-file'">OutputFileChooser</xsl:when>
 		<xsl:when test="@type='boolean'">JCheckBox</xsl:when>
 		<xsl:when test="@type='enum' ">JComboBox&lt;String&gt;</xsl:when>
-		<xsl:when test="@type='int-list' ">MultipleStringChooser</xsl:when>
-		<xsl:when test="@type='int' or @type='double'">JTextField</xsl:when>
+		<xsl:when test="@type='int-list'or @type='string-list' ">MultipleStringChooser</xsl:when>
+		<xsl:when test="@type='int' or @type='double' or @type='long'">JTextField</xsl:when>
 		<xsl:when test="@type='string'">JTextComponent</xsl:when>
+		<xsl:when test="@type='enum-set'">EnumSetChooser&lt;<xsl:value-of select="@enum-class"/>&gt;</xsl:when>
 		<xsl:otherwise>
-			<xsl:message>option:declare unknow <xsl:value-of select="@type"/></xsl:message>
+			<xsl:message terminate='yes'>option:declare unknow <xsl:value-of select="@type"/></xsl:message>
 		</xsl:otherwise>
 	</xsl:choose>
 	</xsl:variable>
@@ -366,7 +367,7 @@ public class <xsl:value-of select="concat(@name,'Pane')"/> extends AbstractGatkU
 		
 		
 		
-		<xsl:when test="@type='int' or @type='double'">
+		<xsl:when test="@type='int' or @type='double' or @type='long'">
 			this.<xsl:value-of select="generate-id(.)"/> = new JTextField("");
 			<xsl:value-of select="generate-id(.)"/>.setToolTipText("<xsl:apply-templates select="description"/>");
 			<xsl:if test="@default">
@@ -379,8 +380,16 @@ public class <xsl:value-of select="concat(@name,'Pane')"/> extends AbstractGatkU
 			<xsl:apply-templates select="filter"/>
 		</xsl:when>
 		
-		<xsl:when test="@type='int-list'">
+		<xsl:when test="@type='enum-set'">
+			this.<xsl:value-of select="generate-id(.)"/> = new EnumSetChooser&lt;<xsl:value-of select="@enum-class"/>&gt;(<xsl:value-of select="@enum-class"/>.class);
+			label.setLabelFor(<xsl:value-of select="generate-id(.)"/>);
+			owner.loadPreference(this.<xsl:value-of select="generate-id(.)"/>, <xsl:apply-templates select="." mode="prefs.key"/>);
+			pane.add(this.<xsl:value-of select="generate-id(.)"/>);
+		</xsl:when>
+		
+		<xsl:when test="@type='int-list' or @type='string-list'">
 			this.<xsl:value-of select="generate-id(.)"/> = new MultipleStringChooser()
+			<xsl:if test="@type='int-list'">
 				{
 				@Override
 				public boolean acceptString(String s)
@@ -399,7 +408,7 @@ public class <xsl:value-of select="concat(@name,'Pane')"/> extends AbstractGatkU
 						}
 					return true;
 					}
-				};
+				}</xsl:if>;
 			pane.add(this.<xsl:value-of select="generate-id(.)"/>);
 			owner.loadPreference(this.<xsl:value-of select="generate-id(.)"/>, <xsl:apply-templates select="." mode="prefs.key"/>);
 		</xsl:when>
@@ -421,15 +430,13 @@ public class <xsl:value-of select="concat(@name,'Pane')"/> extends AbstractGatkU
 			this.<xsl:value-of select="generate-id(.)"/>.setText("<xsl:value-of select="@default"/>");
 			</xsl:if>
 			owner.loadPreference(this.<xsl:value-of select="generate-id(.)"/>, <xsl:apply-templates select="." mode="prefs.key"/>);
-			label.setLabelFor(<xsl:value-of select="generate-id(.)"/>);
-			
-			
+			label.setLabelFor(<xsl:value-of select="generate-id(.)"/>);			
 			<xsl:apply-templates select="filter"/>
 		</xsl:when>
 		
 		
 		<xsl:otherwise>
-			<xsl:message>option unknow <xsl:value-of select="@type"/></xsl:message>
+			<xsl:message terminate='yes'>option unknow <xsl:value-of select="@type"/></xsl:message>
 		</xsl:otherwise>
 	</xsl:choose>
 }
@@ -471,15 +478,16 @@ public class <xsl:value-of select="concat(@name,'Pane')"/> extends AbstractGatkU
 				}
 		</xsl:when>
 		
-		<xsl:when test="@type='int-list'">
+		<xsl:when test="@type='int-list' or @type='string-list' or @type='enum-set'">
 			for(final String s:this.<xsl:value-of select="generate-id(.)"/>.getStrings())
 				{
+				if(s.isEmpty()) continue;
 				command.add("-<xsl:value-of select="@opt"/>");
 				command.add(s);
 				}
 		</xsl:when>
 		
-		<xsl:when test="@type='int' or @type='double'">
+		<xsl:when test="@type='int' or @type='double' or @type='long'">
 			if(!this.<xsl:value-of select="generate-id(.)"/>.getText().trim().isEmpty())
 				{
 				command.add("-<xsl:value-of select="@opt"/>");
@@ -495,8 +503,9 @@ public class <xsl:value-of select="concat(@name,'Pane')"/> extends AbstractGatkU
 				}
 		</xsl:when>
 		
+		
 		<xsl:otherwise>
-			<xsl:message>option:declare unknow <xsl:value-of select="@type"/></xsl:message>
+			<xsl:message terminate='yes'>option:build.cmd unknow '<xsl:value-of select="@type"/>'</xsl:message>
 		</xsl:otherwise>
 	</xsl:choose>
 </xsl:template>
@@ -556,7 +565,7 @@ public class <xsl:value-of select="concat(@name,'Pane')"/> extends AbstractGatkU
 			</xsl:if>
 		</xsl:when>
 		
-		<xsl:when test="@type='int-list'">
+		<xsl:when test="@type='int-list' or @type='string-list' or @type='enum-set'">
 			<xsl:if test="@required='true'">
 			if(this.<xsl:value-of select="generate-id(.)"/>.getStrings().isEmpty())
 				{
@@ -609,6 +618,49 @@ public class <xsl:value-of select="concat(@name,'Pane')"/> extends AbstractGatkU
 			</xsl:if>
 		</xsl:when>
 
+		<xsl:when test="@type='long'">
+			if(!this.<xsl:value-of select="generate-id(.)"/>.getText().trim().isEmpty())
+				{
+				try
+					{
+					long v = Long.parseLong(this.<xsl:value-of select="generate-id(.)"/>.getText().trim());
+					<xsl:if test="@min-inclusive">
+					if(v&lt;<xsl:value-of select="@min-inclusive"/>)
+						{
+						return "<xsl:value-of select="@label"/>: should be greater or equal to <xsl:value-of select="@min-inclusive"/>";
+						}
+					</xsl:if>
+					<xsl:if test="@min-exclusive">
+					if(v&lt;=<xsl:value-of select="@min-exclusive"/>)
+						{
+						return "<xsl:value-of select="@label"/>: should be greater to <xsl:value-of select="@min-exclusive"/>";
+						}
+					</xsl:if>
+					<xsl:if test="@max-inclusive">
+					if(v&gt;=<xsl:value-of select="@max-inclusive"/>)
+						{
+						return "<xsl:value-of select="@label"/>: should be lower or equal to <xsl:value-of select="@max-inclusive"/>";
+						}
+					</xsl:if>
+					<xsl:if test="@max-exclusive">
+					if(v&gt;=<xsl:value-of select="@max-exclusive"/>)
+						{
+						return "<xsl:value-of select="@label"/>: should be lower to <xsl:value-of select="@max-exclusive"/>";
+						}
+					</xsl:if>
+					}
+				catch(Exception err)
+					{
+					return "Bad number : <xsl:value-of select="@label"/>";
+					}
+				}
+			<xsl:if test="@required='true'">
+			else
+				{
+				return "<xsl:value-of select="@label"/> cannot be empty";
+				}
+			</xsl:if>
+		</xsl:when>
 
 		<xsl:when test="@type='double'">
 			if(!this.<xsl:value-of select="generate-id(.)"/>.getText().trim().isEmpty())
@@ -652,7 +704,7 @@ public class <xsl:value-of select="concat(@name,'Pane')"/> extends AbstractGatkU
 		</xsl:when>		
 		
 		<xsl:otherwise>
-			<xsl:message>option:declare unknow <xsl:value-of select="@type"/></xsl:message>
+			<xsl:message terminate='yes'>option:declare unknow <xsl:value-of select="@type"/></xsl:message>
 		</xsl:otherwise>
 	</xsl:choose>
 </xsl:template>
@@ -665,7 +717,7 @@ public class <xsl:value-of select="concat(@name,'Pane')"/> extends AbstractGatkU
 		<xsl:when test="@type='input-file' or @type='output-file'">
 			owner.savePreference(this.<xsl:value-of select="generate-id(.)"/>, <xsl:apply-templates select="." mode="prefs.key"/>);
 		</xsl:when>
-		<xsl:when test="@type='int' or @type='double'">
+		<xsl:when test="@type='int' or @type='double' or @type='long'">
 			owner.savePreference(this.<xsl:value-of select="generate-id(.)"/>, <xsl:apply-templates select="." mode="prefs.key"/>);
 		</xsl:when>		
 		<xsl:when test="@type='boolean'">
@@ -677,11 +729,11 @@ public class <xsl:value-of select="concat(@name,'Pane')"/> extends AbstractGatkU
 		<xsl:when test="@type='enum'">
 			owner.savePreference(this.<xsl:value-of select="generate-id(.)"/>, <xsl:apply-templates select="." mode="prefs.key"/>);
 		</xsl:when>
-		<xsl:when test="@type='int-list'">
+		<xsl:when test="@type='int-list' or @type='string-list' or @type='enum-set'">
 			owner.savePreference(this.<xsl:value-of select="generate-id(.)"/>, <xsl:apply-templates select="." mode="prefs.key"/>);
 		</xsl:when>	
 		<xsl:otherwise>
-			<xsl:message>save.prefs:declare unknow <xsl:value-of select="@type"/></xsl:message>
+			<xsl:message terminate='yes'>save.prefs unknow <xsl:value-of select="@type"/></xsl:message>
 		</xsl:otherwise>
 	</xsl:choose>
 </xsl:template>

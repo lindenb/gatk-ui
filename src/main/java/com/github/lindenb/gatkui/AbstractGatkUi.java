@@ -68,6 +68,7 @@ import org.broadinstitute.gatk.utils.commandline.CommandLineProgram;
 import org.broadinstitute.gatk.utils.commandline.CommandLineUtils;
 
 import com.github.lindenb.gatkui.swing.AbstractFileChooser;
+import com.github.lindenb.gatkui.swing.EnumSetChooser;
 import com.github.lindenb.gatkui.swing.InputFileChooser;
 import com.github.lindenb.gatkui.swing.MultipleFileChooser;
 import com.github.lindenb.gatkui.swing.MultipleStringChooser;
@@ -369,6 +370,16 @@ public abstract class AbstractGatkUi extends JFrame
 			}
 		}
 
+	 public <T extends Enum<T>> void  loadPreference(final EnumSetChooser<T> component,String key)
+		{
+		//TODO
+	
+		}
+
+public <T extends Enum<T>>  void savePreference(EnumSetChooser<T> component,String key)
+	{
+	}	
+	
 	
 	public void loadPreference(JCheckBox component,String key)
 		{

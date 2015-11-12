@@ -91,8 +91,9 @@ SOFTWARE.
 		<xsl:when test="$programName = 'CommandLineGATK' and j:string[@name='name'] = '--analysis_type' ">
 			<xsl:text></xsl:text>
 		</xsl:when>
-	
-		<xsl:when test="count(j:array[@name='options']/j:object)&gt;0">
+		
+		<xsl:when test="( count(j:array[@name='options']/j:object)&gt;0) or 
+						($programName = 'DepthOfCoverage' and  $optName = '--outputFormat' ) ">
 			<xsl:text>enum</xsl:text>
 		</xsl:when>
 		<xsl:when test="$type0 = 'File'">
@@ -104,7 +105,19 @@ SOFTWARE.
 		<xsl:when test="$type0 = 'String'">
 			<xsl:text>string</xsl:text>
 		</xsl:when>
-		<xsl:when test="$type0 = 'int' or $type0 = 'double'  or $type0 = 'boolean'">
+		<xsl:when test="$type0 = 'Boolean'">
+			<xsl:text>boolean</xsl:text>
+		</xsl:when>
+		<xsl:when test="$type0 = 'Integer'">
+			<xsl:text>int</xsl:text>
+		</xsl:when>
+		<xsl:when test="$type0 = 'Long'">
+			<xsl:text>long</xsl:text>
+		</xsl:when>
+		<xsl:when test="$type0 = 'Double'">
+			<xsl:text>double</xsl:text>
+		</xsl:when>
+		<xsl:when test="$type0 = 'int' or $type0 = 'long' or $type0 = 'double'  or $type0 = 'boolean'">
 			<xsl:value-of select="$type0"/>
 		</xsl:when>
 		<xsl:when test="$type0 = 'int[]'">
@@ -116,8 +129,12 @@ SOFTWARE.
 		<xsl:when test="$type0 = 'RodBinding[VariantContext]'">
 			<xsl:text>output-file</xsl:text>
 		</xsl:when>
-
-		
+		<xsl:when test="$type0 = 'List[String]'">
+			<xsl:text>string-list</xsl:text>
+		</xsl:when>
+		<xsl:when test="$type0 = 'Set[Partition]'">
+			<xsl:text>enum-set</xsl:text>
+		</xsl:when>
 		<xsl:otherwise>
 			<xsl:message terminate="no">#### <xsl:value-of select="$type0"/></xsl:message>
 			<xsl:text></xsl:text>
@@ -141,6 +158,9 @@ SOFTWARE.
 	<xsl:value-of select="$type"/>
 </xsl:attribute>
 
+<xsl:if test="$type0 = 'Set[Partition]'">
+	<xsl:attribute name="enum-class">org.broadinstitute.gatk.tools.walkers.coverage.DoCOutputType.Partition</xsl:attribute>
+</xsl:if>
 
 
 
@@ -192,10 +212,18 @@ SOFTWARE.
 		</filter>
 	</xsl:if>
 	
+	<xsl:if test="($programName = 'DepthOfCoverage' and  $optName = '--outputFormat' )">
+		<enum>
+			<item value="rtable">rtable</item>
+			<item value="csv">csv</item>
+			<item value="table">table</item>
+		</enum>
+	</xsl:if>
+	
 </option>
 </xsl:when>
 <xsl:otherwise>
-	<xsl:message>IGNORING TYPE=<xsl:value-of select="$type0"/></xsl:message>
+	<xsl:message>IGNORING TYPE="<xsl:value-of select="$programName"/>" : <xsl:value-of select="$type"/>: <xsl:value-of select="$type0"/> : "<xsl:value-of select="$optName"/>"</xsl:message>
 </xsl:otherwise>
 </xsl:choose>
 </xsl:template>
