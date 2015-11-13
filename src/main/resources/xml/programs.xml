@@ -3,6 +3,7 @@
 
 	<xi:include href="CommandLineGATK.xml"/>	
 	<xi:include href="DepthOfCoverage.xml"/>
+	<xi:include href="SelectVariants.xml"/>
 
 	<program name="DepthOfCoverage00" disabled="true">
 		<description>Assess sequence coverage by a wide array of metrics, partitioned by sample, read group, or library</description>
@@ -37,7 +38,7 @@
 	<!-- =================================================================================== -->
 	<!-- =================================================================================== -->
 
-	<program name="SelectVariants">
+	<program name="SelectVariants00" disabled="true">
 		<description>Select a subset of variants from a larger callset</description>
 		<options>
 			<option opt="-variant" label="Variants" type="input-file" required="true">

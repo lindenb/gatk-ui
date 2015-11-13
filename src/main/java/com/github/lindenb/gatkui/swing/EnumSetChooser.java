@@ -26,6 +26,7 @@ package com.github.lindenb.gatkui.swing;
 
 import java.awt.BorderLayout;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
 import javax.swing.DefaultListModel;
 import javax.swing.JList;
@@ -63,5 +64,25 @@ public class EnumSetChooser<T extends Enum<T>> extends JPanel
 			L.add(item.name());
 			}
 		return L;
+		}
+	public void setStrings(final Collection<String> sel)
+		{
+		this.itemList.clearSelection();
+		final List<Integer> idx = new ArrayList<>();
+		for(final String s:sel)
+			{
+			for(int i=0;i< itemList.getModel().getSize();++i)
+				{
+				if(itemList.getModel().getElementAt(i).name().equals(s))
+					{
+					idx.add(i);
+					break;
+					}
+				}
+			}
+		final int indices[]= new int[idx.size()];
+		for(int i=0;i< idx.size();++i)
+			indices[i]=idx.get(i);
+		this.itemList.setSelectedIndices(indices);
 		}
 	}

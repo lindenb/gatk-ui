@@ -88,7 +88,7 @@ SOFTWARE.
 <xsl:variable name="type0" select="j:string[@name='type']/text()"/>
 <xsl:variable name="type">
 	<xsl:choose>
-		<xsl:when test="$programName = 'CommandLineGATK' and j:string[@name='name'] = '--analysis_type' ">
+		<xsl:when test="$programName = 'CommandLineGATK' and $optName = '--analysis_type' ">
 			<xsl:text></xsl:text>
 		</xsl:when>
 		
@@ -96,6 +96,11 @@ SOFTWARE.
 						($programName = 'DepthOfCoverage' and  $optName = '--outputFormat' ) ">
 			<xsl:text>enum</xsl:text>
 		</xsl:when>
+		
+		<xsl:when test="$type0 = 'List[File]'">
+			<xsl:text>input-files</xsl:text>
+		</xsl:when>
+		
 		<xsl:when test="$type0 = 'File'">
 			<xsl:text>input-file</xsl:text>
 		</xsl:when>
@@ -126,17 +131,40 @@ SOFTWARE.
 		<xsl:when test="$type0 = 'Map[DoCOutputType,PrintStream]'">
 			<xsl:text>output-file</xsl:text>
 		</xsl:when>
-		<xsl:when test="$type0 = 'RodBinding[VariantContext]'">
+		<!-- <xsl:when test="$type0 = 'RodBinding[VariantContext]'">
 			<xsl:text>output-file</xsl:text>
-		</xsl:when>
-		<xsl:when test="$type0 = 'List[String]'">
+		</xsl:when> -->
+		<xsl:when test="$type0 = 'List[String]' or $type0 = 'ArrayList[String]'">
 			<xsl:text>string-list</xsl:text>
 		</xsl:when>
+		
+		<xsl:when test="$type0 = 'Set[String]'">
+			<xsl:text>string-list</xsl:text>
+		</xsl:when>
+		
+		<xsl:when test="$type0 = 'Set[File]'">
+			<xsl:text>input-files</xsl:text>
+		</xsl:when>
+		
 		<xsl:when test="$type0 = 'Set[Partition]'">
 			<xsl:text>enum-set</xsl:text>
 		</xsl:when>
+		<xsl:when test="$type0 = 'List[Type]'">
+			<xsl:text>enum-set</xsl:text>
+		</xsl:when>
+		
+		<xsl:when test="$type0 = 'VariantContextWriter'">
+			<xsl:text>output-file</xsl:text>
+		</xsl:when>
+		
+		<xsl:when test="$type0 = 'List[IntervalBinding[Feature]]'">
+			<xsl:text>strings-or-files</xsl:text>
+		</xsl:when>
+		<xsl:when test="$type0 = 'RodBinding[VariantContext]'">
+			<xsl:text>input-file</xsl:text>
+		</xsl:when>
 		<xsl:otherwise>
-			<xsl:message terminate="no">#### <xsl:value-of select="$type0"/></xsl:message>
+			<xsl:message terminate="yes">#### <xsl:value-of select="concat($programName,'/',$optName,'/',$type0)"/></xsl:message>
 			<xsl:text></xsl:text>
 		</xsl:otherwise>
 	</xsl:choose>
@@ -161,6 +189,11 @@ SOFTWARE.
 <xsl:if test="$type0 = 'Set[Partition]'">
 	<xsl:attribute name="enum-class">org.broadinstitute.gatk.tools.walkers.coverage.DoCOutputType.Partition</xsl:attribute>
 </xsl:if>
+<xsl:if test="$type0 = 'List[Type]'">
+	<xsl:attribute name="enum-class">htsjdk.variant.variantcontext.VariantContext.Type</xsl:attribute>
+</xsl:if>
+
+
 
 
 
@@ -200,8 +233,17 @@ SOFTWARE.
 	<xsl:apply-templates select="j:array[@name='options' and count(j:object)&gt;0]" mode='enum'/>
 
 	<xsl:choose>
-		<xsl:when test="$type0 = 'RodBinding[VariantContext]'">
+		<xsl:when test="
+		  			($type0 = 'VariantContextWriter' and $type='output-file') or
+					($type0 = 'RodBinding[VariantContext]' and $type='output-file') ">
 			<extension>vcf</extension>
+		</xsl:when>
+		<xsl:when test="$type0 = 'RodBinding[VariantContext]' and $type='input-file'">
+			<filter label="Variant">
+				<extension>vcf</extension>
+				<extension>bcf</extension>
+				<extension>vcf.gz</extension>
+			</filter>
 		</xsl:when>
 	</xsl:choose>
 	
@@ -212,13 +254,20 @@ SOFTWARE.
 		</filter>
 	</xsl:if>
 	
-	<xsl:if test="($programName = 'DepthOfCoverage' and  $optName = '--outputFormat' )">
-		<enum>
-			<item value="rtable">rtable</item>
-			<item value="csv">csv</item>
-			<item value="table">table</item>
-		</enum>
+	<xsl:if test="$programName = 'CommandLineGATK' and  $optName = '--reference_sequence' ">
+		<filter label="Fasta">
+			<extension>fa</extension>
+			<extension>fasta</extension>
+		</filter>
 	</xsl:if>
+	
+	<xsl:if test="($programName = 'DepthOfCoverage' and  $optName = '--pedigree' )">
+		<filter label="Pedigree">
+			<extension>ped</extension>
+		</filter>
+	</xsl:if>
+	
+	
 	
 </option>
 </xsl:when>

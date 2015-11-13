@@ -26,7 +26,8 @@ $(error variable gatk.jar is not defined)
 endif
 
 gatk.docs =	org_broadinstitute_gatk_engine_CommandLineGATK \
-			org_broadinstitute_gatk_tools_walkers_coverage_DepthOfCoverage
+		org_broadinstitute_gatk_tools_walkers_coverage_DepthOfCoverage \
+		org_broadinstitute_gatk_tools_walkers_variantutils_SelectVariants
 
 
 define make_gatk_pane

@@ -32,9 +32,9 @@ import java.awt.event.ActionEvent;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
 import java.io.File;
-import java.io.StringWriter;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashSet;
 import java.util.List;
 import java.util.prefs.Preferences;
 
@@ -73,6 +73,7 @@ import com.github.lindenb.gatkui.swing.InputFileChooser;
 import com.github.lindenb.gatkui.swing.MultipleFileChooser;
 import com.github.lindenb.gatkui.swing.MultipleStringChooser;
 import com.github.lindenb.gatkui.swing.MyLayout;
+import com.github.lindenb.gatkui.swing.StringsOrFilesChooser;
 
 @SuppressWarnings("serial")
 public abstract class AbstractGatkUi extends JFrame
@@ -372,12 +373,65 @@ public abstract class AbstractGatkUi extends JFrame
 
 	 public <T extends Enum<T>> void  loadPreference(final EnumSetChooser<T> component,String key)
 		{
-		//TODO
+		final String ss=getPreferences().get(key,null);
+		if(ss==null) return;
+		java.util.Set<String> sel = new HashSet<>();
+		for(final String s:ss.split("[ \n\t]+"))
+			{
+			if(s.isEmpty()) continue;
+			sel.add(s);			
+			}
+		component.setStrings(sel);
+			
 	
 		}
 
+	 public void savePreference(StringsOrFilesChooser component,String key)
+		{
+		if(component.getStrings().isEmpty())
+			{
+			getPreferences().remove(key);
+			}
+		else
+			{
+			StringBuilder sb=new StringBuilder();
+			for(String s:component.getStrings())
+				{
+				if(sb.length()!=0) sb.append(" ");
+				sb.append(s);
+				}
+			getPreferences().put(key,sb.toString());
+			}
+		}
+
+	 public <T extends Enum<T>> void  loadPreference(final StringsOrFilesChooser component,String key)
+		{
+		final String ss=getPreferences().get(key,null);
+		if(ss==null) return;
+		for(final String s:ss.split("[ \n\t]+"))
+			{
+			if(s.isEmpty()) continue;
+			component.addStrings(new String[]{s});		
+			}			
+		} 
+	 
+	 
 public <T extends Enum<T>>  void savePreference(EnumSetChooser<T> component,String key)
 	{
+	if(component.getStrings().isEmpty())
+		{
+		getPreferences().remove(key);
+		}
+	else
+		{
+		StringBuilder sb=new StringBuilder();
+		for(String s:component.getStrings())
+			{
+			if(sb.length()!=0) sb.append(" ");
+			sb.append(s);
+			}
+		getPreferences().put(key,sb.toString());
+		}
 	}	
 	
 	
@@ -664,7 +718,12 @@ public <T extends Enum<T>>  void savePreference(EnumSetChooser<T> component,Stri
 							@Override
 							public void run() {
 								if(GATKRunner.this != owner.runningThread) return;
-								JOptionPane.showMessageDialog(owner,"Completed:"+Arrays.toString(args));
+								
+								JOptionPane.showMessageDialog(owner,
+								new JScrollPane(new JTextArea("Completed:"+Arrays.toString(args),5,20)),
+								"Completed",
+								JOptionPane.INFORMATION_MESSAGE,
+								null);
 								owner.runningThread=null;
 							}
 						});
@@ -679,7 +738,12 @@ public <T extends Enum<T>>  void savePreference(EnumSetChooser<T> component,Stri
 							@Override
 							public void run() {
 								if(GATKRunner.this != owner.runningThread) return;
-								JOptionPane.showMessageDialog(owner,"FAILURE:"+Arrays.toString(args));
+								JOptionPane.showMessageDialog(owner,
+								new JScrollPane(new JTextArea("Failure:"+Arrays.toString(args),5,20)),
+								"Failure",
+								JOptionPane.ERROR_MESSAGE,
+								null);
+								owner.runningThread=null;
 								owner.runningThread=null;
 							}
 						});
@@ -697,7 +761,10 @@ public <T extends Enum<T>>  void savePreference(EnumSetChooser<T> component,Stri
 						public void run() {
 							if(GATKRunner.this != owner.runningThread) return;
 							JOptionPane.showMessageDialog(owner,
-									"FAILURE:"+err.getMessage());
+								new JScrollPane(new JTextArea("Failure:"+Arrays.toString(args),5,20)),
+								"Failure",
+								JOptionPane.ERROR_MESSAGE,
+								null);
 							owner.runningThread=null;
 						}
 					});

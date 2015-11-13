@@ -26,6 +26,7 @@ SOFTWARE.
 package com.github.lindenb.gatkui;
 
 import java.awt.Dimension;
+import java.awt.Rectangle;
 import java.awt.Toolkit;
 
 import javax.swing.JDialog;
@@ -57,11 +58,14 @@ public class GatkUi extends AbstractGatkPrograms
 					app.pack();
 					Dimension screen = Toolkit.getDefaultToolkit().getScreenSize();
 					Dimension dim = app.getPreferredSize();
-					
-					app.setBounds(
+					Rectangle r = new Rectangle(										
 							(screen.width-dim.width)/2,
 							(screen.height-dim.height)/2,
-							dim.width, dim.height);
+							dim.width, dim.height
+							);
+					if(r.width>screen.width) r.width=screen.width;
+					if(r.height>screen.height) r.height=screen.height;
+					app.setBounds(r.x,r.y,r.width,r.height);
 					app.setVisible(true);
 					}
 				});

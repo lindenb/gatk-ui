@@ -153,9 +153,8 @@ public class <xsl:value-of select="concat(@name,'Pane')"/> extends AbstractGatkU
 		JPanel pane = new JPanel(new MyLayout());
 		pane.setBorder(new javax.swing.border.EmptyBorder(15, 15, 15, 15));
 
-		
-		<xsl:apply-templates select="options/option" />
-		
+		<xsl:apply-templates select="options/option[@required='true']" />
+		<xsl:apply-templates select="options/option[not(@required='true')]" />
 		
 		JScrollPane scroll = new JScrollPane(pane);
 		this.add(scroll,BorderLayout.CENTER);
@@ -242,6 +241,7 @@ public class <xsl:value-of select="concat(@name,'Pane')"/> extends AbstractGatkU
 		<xsl:when test="@type='int' or @type='double' or @type='long'">JTextField</xsl:when>
 		<xsl:when test="@type='string'">JTextComponent</xsl:when>
 		<xsl:when test="@type='enum-set'">EnumSetChooser&lt;<xsl:value-of select="@enum-class"/>&gt;</xsl:when>
+		<xsl:when test="@type='strings-or-files'">StringsOrFilesChooser</xsl:when>
 		<xsl:otherwise>
 			<xsl:message terminate='yes'>option:declare unknow <xsl:value-of select="@type"/></xsl:message>
 		</xsl:otherwise>
@@ -434,6 +434,13 @@ public class <xsl:value-of select="concat(@name,'Pane')"/> extends AbstractGatkU
 			<xsl:apply-templates select="filter"/>
 		</xsl:when>
 		
+		<xsl:when test="@type='strings-or-files'">
+			this.<xsl:value-of select="generate-id(.)"/> = new StringsOrFilesChooser();
+			label.setLabelFor(<xsl:value-of select="generate-id(.)"/>);
+			owner.loadPreference(this.<xsl:value-of select="generate-id(.)"/>, <xsl:apply-templates select="." mode="prefs.key"/>);
+			pane.add(this.<xsl:value-of select="generate-id(.)"/>);
+			<xsl:apply-templates select="filter"/>
+		</xsl:when>
 		
 		<xsl:otherwise>
 			<xsl:message terminate='yes'>option unknow <xsl:value-of select="@type"/></xsl:message>
@@ -447,6 +454,14 @@ public class <xsl:value-of select="concat(@name,'Pane')"/> extends AbstractGatkU
 
 <xsl:template match="option" mode="build.cmd">
 	<xsl:choose>
+		<xsl:when test="@type='strings-or-files'">
+			for(final String f: this.<xsl:value-of select="generate-id(.)"/>.getStrings())
+				{
+				if(f.isEmpty()) continue;
+				command.add("-<xsl:value-of select="@opt"/>");
+				command.add(f);
+				}
+		</xsl:when>
 		<xsl:when test="@type='input-files'">
 			for(File f: this.<xsl:value-of select="generate-id(.)"/>.getFiles())
 				{
@@ -513,6 +528,16 @@ public class <xsl:value-of select="concat(@name,'Pane')"/> extends AbstractGatkU
 
 <xsl:template match="option" mode="can.build">
 	<xsl:choose>
+	
+		<xsl:when test="@type='strings-or-files'">
+			<xsl:if test="@required='true'">
+				if(this.<xsl:value-of select="generate-id(.)"/>.getStrings().isEmpty())
+					{
+					return "<xsl:value-of select="@label"/> cannot be empty";
+					}
+			</xsl:if>
+		</xsl:when>
+	
 		<xsl:when test="@type='input-files'">
 			<xsl:if test="@required='true'">
 				if(this.<xsl:value-of select="generate-id(.)"/>.getFiles().isEmpty())
@@ -711,6 +736,9 @@ public class <xsl:value-of select="concat(@name,'Pane')"/> extends AbstractGatkU
 
 <xsl:template match="option" mode="save.prefs">
 	<xsl:choose>
+		<xsl:when test="@type='strings-or-files'">
+			owner.savePreference(this.<xsl:value-of select="generate-id(.)"/>, <xsl:apply-templates select="." mode="prefs.key"/>);
+		</xsl:when>
 		<xsl:when test="@type='input-files'">
 			owner.savePreference(this.<xsl:value-of select="generate-id(.)"/>, <xsl:apply-templates select="." mode="prefs.key"/>);
 		</xsl:when>
