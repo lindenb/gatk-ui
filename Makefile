@@ -31,6 +31,10 @@ gatk.docs =	org_broadinstitute_gatk_engine_CommandLineGATK \
 		org_broadinstitute_gatk_tools_walkers_qc_CountReads \
 		org_broadinstitute_gatk_tools_walkers_qc_CountLoci \
 		org_broadinstitute_gatk_tools_walkers_qc_CountIntervals \
+		org_broadinstitute_gatk_tools_walkers_qc_CountMales \
+		org_broadinstitute_gatk_tools_walkers_qc_CountRODs \
+		org_broadinstitute_gatk_tools_walkers_qc_CountRODsByRef \
+		org_broadinstitute_gatk_tools_walkers_qc_CountReadEvents \
 
 
 define make_gatk_pane

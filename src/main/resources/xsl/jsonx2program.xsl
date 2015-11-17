@@ -66,7 +66,9 @@ SOFTWARE.
 	<xsl:choose>
 		<xsl:when test="$programName='DepthOfCoverage' or
 						$programName='CountReads' or
-						$programName='CountLoci' ">
+						$programName='CountLoci' or
+						$programName='CountReadEvents' or
+						$programName='CountMales' ">
 				<option opt="I" label="BAM list" type="input-files"  required="true">
 					<description>Input Bam(s)</description>
 					<filter label="BAMS">
@@ -76,6 +78,8 @@ SOFTWARE.
 				</option>
 		</xsl:when>
 		<xsl:when test="$programName='SelectVariants' or
+						$programName='CountRODs' or
+						$programName='CountRODsByRef' or
 						$programName='CountIntervals'">
 		</xsl:when>
 		<xsl:when test="$programName='TODO'">
