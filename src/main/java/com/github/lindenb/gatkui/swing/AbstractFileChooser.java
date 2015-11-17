@@ -4,6 +4,8 @@ import java.awt.BorderLayout;
 import java.awt.FlowLayout;
 import java.awt.event.ActionEvent;
 import java.io.File;
+import java.util.Collections;
+import java.util.Set;
 
 import javax.swing.AbstractAction;
 import javax.swing.JButton;
@@ -12,7 +14,8 @@ import javax.swing.JPanel;
 import javax.swing.JTextField;
 
 @SuppressWarnings("serial")
-public abstract class AbstractFileChooser extends AbstractFilterChooser
+public abstract class AbstractFileChooser
+	extends AbstractFilterChooser
 	{
 	private JTextField textField;
 	AbstractFileChooser()
@@ -70,7 +73,7 @@ public abstract class AbstractFileChooser extends AbstractFilterChooser
 		}
 	
 	public void setText(String file) {
-		if(file==null)
+		if(file==null || file.trim().isEmpty())
 			{
 			this.textField.setText("");	
 			this.textField.setToolTipText("");
@@ -89,5 +92,22 @@ public abstract class AbstractFileChooser extends AbstractFilterChooser
 		this.textField.setToolTipText(arg0);
 		super.setToolTipText(arg0);
 		}
-
-}
+	
+	@Override
+	public void setStrings(final Set<String> set) {
+		setText(null);
+		for(String s:set)
+			{
+			if(s.trim().isEmpty()) continue;
+			setText(s);
+			break;
+			}
+		}
+	@Override
+	public Set<String> getStrings()
+		{
+		String s = getText();
+		if(s==null || s.trim().isEmpty()) return Collections.emptySet();
+		return Collections.singleton(s.trim());
+		}
+	}

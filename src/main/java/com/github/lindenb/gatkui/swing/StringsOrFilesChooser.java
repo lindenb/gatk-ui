@@ -185,6 +185,7 @@ public class StringsOrFilesChooser extends AbstractFilterChooser
 		this.add(scroll,BorderLayout.CENTER);
 		}
 	
+	@Override
 	public Set<String> getStrings()
 		{
 		 Set<String> f= new HashSet<>(model.getSize());
@@ -194,6 +195,16 @@ public class StringsOrFilesChooser extends AbstractFilterChooser
 		 	}
 		return f;
 		}
+	
+	@Override
+	public void setStrings(Set<String> set) {
+		model.clear();
+		for(String f:set)
+			{	
+			model.addElement(f);
+			}
+		}
+	
 	public void addStrings(String files[])
 		{
 		if(files==null || files.length==0) return;

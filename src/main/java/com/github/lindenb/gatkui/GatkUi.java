@@ -56,16 +56,19 @@ public class GatkUi extends AbstractGatkPrograms
 				public void run()
 					{
 					app.pack();
-					Dimension screen = Toolkit.getDefaultToolkit().getScreenSize();
-					Dimension dim = app.getPreferredSize();
+					final Dimension screen = Toolkit.getDefaultToolkit().getScreenSize();
+					final Dimension dim = app.getPreferredSize();
 					Rectangle r = new Rectangle(										
 							(screen.width-dim.width)/2,
 							(screen.height-dim.height)/2,
 							dim.width, dim.height
 							);
-					if(r.width>screen.width) r.width=screen.width;
-					if(r.height>screen.height) r.height=screen.height;
-					app.setBounds(r.x,r.y,r.width,r.height);
+					app.setBounds(
+							Math.max(0,r.x),
+							Math.max(0,r.y),
+							Math.min(r.width,screen.width),
+							Math.min(r.width,screen.height)
+							);
 					app.setVisible(true);
 					}
 				});

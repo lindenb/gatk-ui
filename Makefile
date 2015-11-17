@@ -27,7 +27,10 @@ endif
 
 gatk.docs =	org_broadinstitute_gatk_engine_CommandLineGATK \
 		org_broadinstitute_gatk_tools_walkers_coverage_DepthOfCoverage \
-		org_broadinstitute_gatk_tools_walkers_variantutils_SelectVariants
+		org_broadinstitute_gatk_tools_walkers_variantutils_SelectVariants \
+		org_broadinstitute_gatk_tools_walkers_qc_CountReads \
+		org_broadinstitute_gatk_tools_walkers_qc_CountLoci \
+		org_broadinstitute_gatk_tools_walkers_qc_CountIntervals \
 
 
 define make_gatk_pane
@@ -97,18 +100,19 @@ ${bin.dir}/json2xml.jar: \
 	rm -rf ${tmp.dir}2
 
 
-
-	
-
 ${this.dir}src/main/generated-code/java/com/github/lindenb/gatkui/AbstractGatkPrograms.java :  \
 		src/main/resources/xsl/programs2java.xsl \
 		src/main/resources/xsl/commandpreproc.xsl \
-		src/main/resources/xml/programs.xml \
 		$(foreach U,${gatk.docs}, ${this.dir}src/main/generated-code/xml/$(lastword $(subst _, ,${U})).xml )
-	mkdir -p $(dir $@)
+	mkdir -p $(dir $@) ${this.dir}src/main/generated-code/xml
+	echo '<?xml version="1.0" encoding="UTF-8"?>' >  ${this.dir}src/main/generated-code/xml//programs.xml
+	echo '<programs xmlns:xi="http://www.w3.org/2001/XInclude">' >>  ${this.dir}src/main/generated-code/xml//programs.xml
+	$(foreach U,${gatk.docs}, echo '<xi:include href="$(lastword $(subst _, ,${U})).xml"/>' >>  ${this.dir}src/main/generated-code/xml/programs.xml ;  )
+	echo '</programs>' >>  ${this.dir}src/main/generated-code/xml/programs.xml
 	xsltproc --xinclude --path "${this.dir}src/main/generated-code/xml" -o "$(addsuffix .tmp.xml,$@)" ${this.dir}src/main/resources/xsl/commandpreproc.xsl src/main/resources/xml/programs.xml
 	xsltproc --stringparam outdir "$(dir $@)" -o $@ ${this.dir}src/main/resources/xsl/programs2java.xsl "$(addsuffix .tmp.xml,$@)"
 	rm "$(addsuffix .tmp.xml,$@)"
+
 
 $(eval $(foreach U,${gatk.docs},$(call make_gatk_pane,${U})))
 

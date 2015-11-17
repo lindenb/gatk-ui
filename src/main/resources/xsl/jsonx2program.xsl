@@ -64,7 +64,9 @@ SOFTWARE.
 <description><xsl:apply-templates select="j:string[@name='summary']"/></description>
 <options>
 	<xsl:choose>
-		<xsl:when test="j:string[@name='walkertype']/text()='LocusWalker'">
+		<xsl:when test="$programName='DepthOfCoverage' or
+						$programName='CountReads' or
+						$programName='CountLoci' ">
 				<option opt="I" label="BAM list" type="input-files"  required="true">
 					<description>Input Bam(s)</description>
 					<filter label="BAMS">
@@ -73,9 +75,22 @@ SOFTWARE.
 					</filter>
 				</option>
 		</xsl:when>
+		<xsl:when test="$programName='SelectVariants' or
+						$programName='CountIntervals'">
+		</xsl:when>
+		<xsl:when test="$programName='TODO'">
+				<option opt="I" label="VCF list" type="input-files"  required="true">
+					<description>Input VCF(s)</description>
+					<filter label="Variant Files">
+						<extension indexed="true">vcf.gz</extension>
+						<extension>vcf</extension>
+						<extension>list</extension>
+					</filter>
+				</option>
+		</xsl:when>
 		<xsl:when test="$programName = 'CommandLineGATK' "></xsl:when>
 		<xsl:otherwise>
-			<xsl:message terminate="yes">Unknown walkertype <xsl:value-of select="j:string[@name='walkertype']"/></xsl:message>
+			<xsl:message terminate="yes">Unknown walkertype <xsl:value-of select="concat(j:string[@name='walkertype'],':',$programName)"/></xsl:message>
 		</xsl:otherwise>
 	</xsl:choose>
 	<xsl:apply-templates select="j:array[@name='arguments']/j:object" mode="argument"/>
@@ -156,12 +171,20 @@ SOFTWARE.
 		<xsl:when test="$type0 = 'VariantContextWriter'">
 			<xsl:text>output-file</xsl:text>
 		</xsl:when>
-		
+		<xsl:when test="$type0 = 'PrintStream'">
+			<xsl:text>output-file</xsl:text>
+		</xsl:when>
 		<xsl:when test="$type0 = 'List[IntervalBinding[Feature]]'">
 			<xsl:text>strings-or-files</xsl:text>
 		</xsl:when>
+		<xsl:when test="$type0 = 'RodBinding[VariantContext]' and starts-with(j:string[@name='summary'],'Output')">
+			<xsl:text>output-file</xsl:text>
+		</xsl:when>
 		<xsl:when test="$type0 = 'RodBinding[VariantContext]'">
 			<xsl:text>input-file</xsl:text>
+		</xsl:when>
+		<xsl:when test="$type0 = 'List[RodBinding[Feature]]'">
+			<xsl:text>strings-or-files</xsl:text>
 		</xsl:when>
 		<xsl:otherwise>
 			<xsl:message terminate="yes">#### <xsl:value-of select="concat($programName,'/',$optName,'/',$type0)"/></xsl:message>

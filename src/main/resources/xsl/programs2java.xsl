@@ -127,7 +127,7 @@ public class <xsl:value-of select="concat(@name,'Pane')"/> extends AbstractGatkU
 		lbl.setFont(new Font("Dialog",Font.BOLD,18));
 		top.add(lbl,BorderLayout.CENTER);
 		
-		
+		/** URL button */
 		if(getOnlineUrl()!=null &amp;&amp; java.awt.Desktop.isDesktopSupported())
 			{
 			final AbstractAction wwwAction = new AbstractAction("WWW")
@@ -147,7 +147,7 @@ public class <xsl:value-of select="concat(@name,'Pane')"/> extends AbstractGatkU
 			final JButton www = new JButton(wwwAction);
 			top.add(www,BorderLayout.EAST);
 			}
-		
+		/** end URL button */
 		this.add(top,BorderLayout.NORTH);
 		
 		JPanel pane = new JPanel(new MyLayout());

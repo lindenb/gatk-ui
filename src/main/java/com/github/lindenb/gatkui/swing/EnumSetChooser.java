@@ -26,8 +26,10 @@ package com.github.lindenb.gatkui.swing;
 
 import java.awt.BorderLayout;
 import java.util.ArrayList;
-import java.util.Collection;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
+
 import javax.swing.DefaultListModel;
 import javax.swing.JList;
 import javax.swing.JPanel;
@@ -36,6 +38,7 @@ import javax.swing.ListSelectionModel;
 
 @SuppressWarnings("serial")
 public class EnumSetChooser<T extends Enum<T>> extends JPanel
+	implements StringSet
 	{
 	private JList<T> itemList;
 	private DefaultListModel<T> model;
@@ -56,20 +59,22 @@ public class EnumSetChooser<T extends Enum<T>> extends JPanel
 		this.add(scroll,BorderLayout.CENTER);
 		}
 
-	public List<String> getStrings()
+	@Override
+	public Set<String> getStrings()
 		{
-		List<String> L= new ArrayList<String>();
+		Set<String> L= new HashSet<String>();
 		for(final T item:this.itemList.getSelectedValuesList())
 			{
 			L.add(item.name());
 			}
 		return L;
 		}
-	public void setStrings(final Collection<String> sel)
-		{
+	
+	@Override
+	public void setStrings(final Set<String> set) {
 		this.itemList.clearSelection();
 		final List<Integer> idx = new ArrayList<>();
-		for(final String s:sel)
+		for(final String s:set)
 			{
 			for(int i=0;i< itemList.getModel().getSize();++i)
 				{

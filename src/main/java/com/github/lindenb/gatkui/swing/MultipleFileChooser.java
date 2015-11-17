@@ -163,6 +163,28 @@ public class MultipleFileChooser extends AbstractFilterChooser
 		this.add(scroll,BorderLayout.CENTER);
 		}
 	
+	@Override
+	public void setStrings(final Set<String> set) {
+		DefaultListModel<File> m = (DefaultListModel<File>)fileList.getModel();
+		m.clear();
+		for(String s:set)
+			{
+			if(s.trim().isEmpty()) continue;
+			m.addElement(new File(s.trim()));
+			}
+		}
+	
+	@Override
+	public Set<String> getStrings() {
+		final Set<String> S= new HashSet<>(fileList.getModel().getSize());
+		for(int i=0;i< fileList.getModel().getSize();++i)
+		 	{
+			S.add(fileList.getModel().getElementAt(i).getPath()); 
+		 	}
+		return S;
+		}
+	
+	
 	public Set<File> getFiles()
 		{
 		 Set<File> f= new HashSet<>(fileList.getModel().getSize());

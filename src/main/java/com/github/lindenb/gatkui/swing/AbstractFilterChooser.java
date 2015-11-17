@@ -8,7 +8,9 @@ import javax.swing.filechooser.FileFilter;
 
 
 @SuppressWarnings("serial")
-public abstract class AbstractFilterChooser extends JPanel
+public abstract class AbstractFilterChooser
+	extends JPanel
+	implements StringSet
 	{
 	private FileFilter filter=null;
 	
