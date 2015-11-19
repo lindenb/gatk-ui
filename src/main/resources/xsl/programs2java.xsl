@@ -195,7 +195,7 @@ public class <xsl:value-of select="concat(@name,'Pane')"/> extends AbstractGatkU
 	@Override
 	public String getDescription()
 		{
-		return  "<xsl:value-of select="description"/>";
+		return  "<xsl:apply-templates select="description"/>";
 		}
 	
 	@Override
@@ -247,11 +247,12 @@ public class <xsl:value-of select="concat(@name,'Pane')"/> extends AbstractGatkU
 		<xsl:when test="@type='output-file'">OutputFileChooser</xsl:when>
 		<xsl:when test="@type='boolean'">JCheckBox</xsl:when>
 		<xsl:when test="@type='enum' ">JComboBox&lt;String&gt;</xsl:when>
-		<xsl:when test="@type='int-list'or @type='string-list' ">MultipleStringChooser</xsl:when>
+		<xsl:when test="@type='int-list' or @type='string-list' or @type='double-list' ">MultipleStringChooser</xsl:when>
 		<xsl:when test="@type='int' or @type='double' or @type='long'">JTextField</xsl:when>
 		<xsl:when test="@type='string'">JTextComponent</xsl:when>
 		<xsl:when test="@type='enum-set'">EnumSetChooser&lt;<xsl:value-of select="@enum-class"/>&gt;</xsl:when>
 		<xsl:when test="@type='strings-or-files'">StringsOrFilesChooser</xsl:when>
+		<xsl:when test="@type='rod-files'">MultipleRODChooser</xsl:when>
 		<xsl:otherwise>
 			<xsl:message terminate='yes'>option:declare unknow <xsl:value-of select="@type"/></xsl:message>
 		</xsl:otherwise>
@@ -397,9 +398,10 @@ public class <xsl:value-of select="concat(@name,'Pane')"/> extends AbstractGatkU
 			pane.add(this.<xsl:value-of select="generate-id(.)"/>);
 		</xsl:when>
 		
-		<xsl:when test="@type='int-list' or @type='string-list'">
+		<xsl:when test="@type='int-list' or @type='string-list' or @type='double-list'">
 			this.<xsl:value-of select="generate-id(.)"/> = new MultipleStringChooser()
-			<xsl:if test="@type='int-list'">
+			<xsl:choose>
+			<xsl:when test="@type='int-list'">
 				{
 				@Override
 				public boolean acceptString(String s)
@@ -418,7 +420,28 @@ public class <xsl:value-of select="concat(@name,'Pane')"/> extends AbstractGatkU
 						}
 					return true;
 					}
-				}</xsl:if>;
+				}</xsl:when>
+				<xsl:when test="@type='double-list'">
+				{
+				@Override
+				public boolean acceptString(String s)
+					{
+					if(s==null) return false;
+					s=s.trim();
+					if(s.isEmpty()) return false;
+					try
+						{
+						Double.parseDouble(s);
+						}
+					catch(Exception err)
+						{
+						LOG.info("Not a valid double "+s);
+						return false;
+						}
+					return true;
+					}
+				}</xsl:when>
+			</xsl:choose>;
 			pane.add(this.<xsl:value-of select="generate-id(.)"/>);
 			owner.loadPreference(this.<xsl:value-of select="generate-id(.)"/>, <xsl:apply-templates select="." mode="prefs.key"/>);
 		</xsl:when>
@@ -452,8 +475,16 @@ public class <xsl:value-of select="concat(@name,'Pane')"/> extends AbstractGatkU
 			<xsl:apply-templates select="filter"/>
 		</xsl:when>
 		
+		<xsl:when test="@type='rod-files'">
+			this.<xsl:value-of select="generate-id(.)"/> = new MultipleRODChooser();
+			label.setLabelFor(<xsl:value-of select="generate-id(.)"/>);
+			owner.loadPreference(this.<xsl:value-of select="generate-id(.)"/>, <xsl:apply-templates select="." mode="prefs.key"/>);
+			pane.add(this.<xsl:value-of select="generate-id(.)"/>);
+			<xsl:apply-templates select="filter"/>
+		</xsl:when>
+		
 		<xsl:otherwise>
-			<xsl:message terminate='yes'>option unknow <xsl:value-of select="@type"/></xsl:message>
+			<xsl:message terminate='yes'>option unknow type <xsl:value-of select="@type"/></xsl:message>
 		</xsl:otherwise>
 	</xsl:choose>
 }
@@ -503,7 +534,7 @@ public class <xsl:value-of select="concat(@name,'Pane')"/> extends AbstractGatkU
 				}
 		</xsl:when>
 		
-		<xsl:when test="@type='int-list' or @type='string-list' or @type='enum-set'">
+		<xsl:when test="@type='int-list' or @type='string-list'  or @type='double-list' or @type='enum-set'">
 			for(final String s:this.<xsl:value-of select="generate-id(.)"/>.getStrings())
 				{
 				if(s.isEmpty()) continue;
@@ -529,6 +560,15 @@ public class <xsl:value-of select="concat(@name,'Pane')"/> extends AbstractGatkU
 		</xsl:when>
 		
 		
+		<xsl:when test="@type='rod-files'">
+			for(final com.github.lindenb.gatkui.RodFile s:this.<xsl:value-of select="generate-id(.)"/>.getFiles())
+				{
+				if(s.getFile()==null) continue;
+				command.add("-<xsl:value-of select="@opt"/>"+(s.getPrefix().isEmpty()?"":":"+s.getPrefix()));
+				command.add(s.getFile().getPath());
+				}
+		</xsl:when>
+		
 		<xsl:otherwise>
 			<xsl:message terminate='yes'>option:build.cmd unknow '<xsl:value-of select="@type"/>'</xsl:message>
 		</xsl:otherwise>
@@ -538,7 +578,16 @@ public class <xsl:value-of select="concat(@name,'Pane')"/> extends AbstractGatkU
 
 <xsl:template match="option" mode="can.build">
 	<xsl:choose>
-	
+		<xsl:when test="@type='rod-files'">
+			<xsl:if test="@required='true'">
+				if(this.<xsl:value-of select="generate-id(.)"/>.getFiles().isEmpty())
+					{
+					return "<xsl:value-of select="@label"/> cannot be empty";
+					}
+			</xsl:if>
+		</xsl:when>
+		
+		
 		<xsl:when test="@type='strings-or-files'">
 			<xsl:if test="@required='true'">
 				if(this.<xsl:value-of select="generate-id(.)"/>.getStrings().isEmpty())
@@ -600,7 +649,7 @@ public class <xsl:value-of select="concat(@name,'Pane')"/> extends AbstractGatkU
 			</xsl:if>
 		</xsl:when>
 		
-		<xsl:when test="@type='int-list' or @type='string-list' or @type='enum-set'">
+		<xsl:when test="@type='int-list' or @type='string-list' or @type='double-list'  or @type='enum-set'">
 			<xsl:if test="@required='true'">
 			if(this.<xsl:value-of select="generate-id(.)"/>.getStrings().isEmpty())
 				{
@@ -739,7 +788,7 @@ public class <xsl:value-of select="concat(@name,'Pane')"/> extends AbstractGatkU
 		</xsl:when>		
 		
 		<xsl:otherwise>
-			<xsl:message terminate='yes'>option:declare unknow <xsl:value-of select="@type"/></xsl:message>
+			<xsl:message terminate='yes'>option:canbuild unknow <xsl:value-of select="@type"/></xsl:message>
 		</xsl:otherwise>
 	</xsl:choose>
 </xsl:template>
@@ -767,7 +816,10 @@ public class <xsl:value-of select="concat(@name,'Pane')"/> extends AbstractGatkU
 		<xsl:when test="@type='enum'">
 			owner.savePreference(this.<xsl:value-of select="generate-id(.)"/>, <xsl:apply-templates select="." mode="prefs.key"/>);
 		</xsl:when>
-		<xsl:when test="@type='int-list' or @type='string-list' or @type='enum-set'">
+		<xsl:when test="@type='rod-files'">
+			owner.savePreference(this.<xsl:value-of select="generate-id(.)"/>, <xsl:apply-templates select="." mode="prefs.key"/>);
+		</xsl:when>	
+		<xsl:when test="@type='int-list' or @type='string-list' or @type='enum-set' or @type='double-list'">
 			owner.savePreference(this.<xsl:value-of select="generate-id(.)"/>, <xsl:apply-templates select="." mode="prefs.key"/>);
 		</xsl:when>	
 		<xsl:otherwise>
@@ -787,9 +839,10 @@ public class <xsl:value-of select="concat(@name,'Pane')"/> extends AbstractGatkU
 this.<xsl:value-of select="generate-id(..)"/>.setFilter(new javax.swing.filechooser.FileFilter() {
 	@Override
 	public String getDescription() {
+	
 		return "<xsl:value-of select="@label"/>";
 	}
-	
+
 	@Override
 	public boolean accept(final java.io.File f)
 		{
@@ -815,6 +868,10 @@ if(f.getName().toLowerCase().endsWith(".bam"))
 
 <xsl:template match="extension">
 if(f.getName().toLowerCase().endsWith(".<xsl:value-of select="text()"/>".toLowerCase())) return true;
+</xsl:template>
+
+<xsl:template match="description">
+<xsl:value-of select="translate(translate(text(),'&quot;',''),'&#13;&#10;','  ')"/>
 </xsl:template>
 
 <xsl:template name="license">

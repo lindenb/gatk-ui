@@ -70,6 +70,7 @@ import org.broadinstitute.gatk.utils.commandline.CommandLineUtils;
 import com.github.lindenb.gatkui.swing.AbstractFileChooser;
 import com.github.lindenb.gatkui.swing.EnumSetChooser;
 import com.github.lindenb.gatkui.swing.MultipleFileChooser;
+import com.github.lindenb.gatkui.swing.MultipleRODChooser;
 import com.github.lindenb.gatkui.swing.MultipleStringChooser;
 import com.github.lindenb.gatkui.swing.StringsOrFilesChooser;
 
@@ -403,6 +404,39 @@ public abstract class AbstractGatkUi extends JFrame
 			}
 		}
 
+	
+	public void loadPreference(MultipleRODChooser component,String key)
+		{
+		String ss=getPreferences().get(key,null);
+		if(ss==null) return;
+		for(String s:ss.split("[ \n\t]+"))
+			{
+			if(s.isEmpty()) continue;
+			component.addRodFile(new RodFile(s));
+			}
+	
+		}
+
+public void savePreference(MultipleRODChooser component,String key)
+	{
+	if(component.getStrings().isEmpty())
+		{
+		getPreferences().remove(key);
+		}
+	else
+		{
+		StringBuilder sb=new StringBuilder();
+		for(String s:component.getStrings())
+			{
+			if(sb.length()!=0) sb.append(" ");
+			sb.append(s);
+			}
+		getPreferences().put(key,sb.toString());
+		}
+	}
+
+	
+	
 	 public <T extends Enum<T>> void  loadPreference(final EnumSetChooser<T> component,String key)
 		{
 		final String ss=getPreferences().get(key,null);

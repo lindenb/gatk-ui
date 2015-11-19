@@ -332,6 +332,9 @@ SOFTWARE.
 <xsl:if test="$type0 = 'List[Type]'">
 	<xsl:attribute name="enum-class">htsjdk.variant.variantcontext.VariantContext.Type</xsl:attribute>
 </xsl:if>
+<xsl:if test="$type0 = 'List[ValidationType]'">
+	<xsl:attribute name="enum-class">org.broadinstitute.gatk.tools.walkers.variantutils.ValidateVariants.ValidationType</xsl:attribute>
+</xsl:if>
 
 
 
