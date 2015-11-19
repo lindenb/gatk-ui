@@ -94,7 +94,15 @@ SOFTWARE.
 						$programName='ReadAdaptorTrimmer' or
 						$programName='RealignerTargetCreator' or
 						$programName='SplitNCigarReads' or
-						$programName='SplitSamFile'
+						$programName='SplitSamFile' or
+						$programName='HaplotypeCaller' or
+						$programName='PhaseByTransmission' or
+						$programName='ReadBackedPhasing' or
+						$programName='UnifiedGenotyper' or
+						$programName='VariantAnnotator'  or
+						$programName='GenotypeAndValidate'  or
+						$programName='HCMappingQualityFilter'  or
+						$programName='VariantAnnotator' 
 						">
 				<option opt="I" label="BAM list" required="true">
 					<xsl:attribute name="type">
@@ -119,10 +127,44 @@ SOFTWARE.
 						$programName='GCContentByInterval' or
 						$programName='PrintRODs' or
 						$programName='QCRef' or
-						$programName='SimulateReadsForVariants'
+						$programName='SimulateReadsForVariants' or
+						$programName='BeagleOutputToVCF' or
+						$programName='GenotypeGVCFs' or
+						$programName='ProduceBeagleInput' or
+						$programName='VariantRecalibrator' or
+						$programName='VariantsToBeagleUnphased' or
+						$programName='CalculateGenotypePosteriors' or
+						$programName='CatVariants' or
+						$programName='CombineGVCFs' or
+						$programName='CombineVariants' or
+						$programName='FilterLiftedVariants' or
+						$programName='GenotypeConcordance' or
+						$programName='HaplotypeResolver' or
+						$programName='LeftAlignAndTrimVariants' or
+						$programName='LiftoverVariants' or
+						$programName='RandomlySplitVariants' or
+						$programName='RegenotypeVariants' or
+						$programName='SelectHeaders' or
+						$programName='VariantEval' or
+						$programName='VariantFiltration' or
+						$programName='VariantsToAllelicPrimitives' or
+						$programName='VariantFiltration' or
+						$programName='VariantsToBinaryPed' or
+						$programName='VariantsToTable' or
+						$programName='VariantsToVCF' or
+						$programName='ListAnnotations' or
+						$programName='FastaAlternateReferenceMaker' or
+						$programName='FastaReferenceMaker' or
+						$programName='ValidateVariants' or
+						$programName='ValidationSiteSelector' or
+						$programName='FastaReferenceMaker' or
+						$programName='FastaReferenceMaker' or
+						$programName='VariantValidationAssessor'
 						">
 		</xsl:when>
-		<xsl:when test="$programName='TODO'">
+		<xsl:when test="$programName='TODO' or (
+					j:array[@name='arguments']/j:object[j:string[@name='type']='List[RodBinding[VariantContext]]' and j:string[@name='name']='--input' ]
+					)">
 				<option opt="I" label="VCF list" type="input-files"  required="true">
 					<description>Input VCF(s)</description>
 					<filter label="Variant Files">
@@ -184,8 +226,11 @@ SOFTWARE.
 		<xsl:when test="$type0 = 'int' or $type0 = 'long' or $type0 = 'double'  or $type0 = 'boolean'">
 			<xsl:value-of select="$type0"/>
 		</xsl:when>
-		<xsl:when test="$type0 = 'int[]'">
+		<xsl:when test="$type0 = 'int[]' or $type0='List[Integer]'">
 			<xsl:text>int-list</xsl:text>
+		</xsl:when>
+		<xsl:when test="$type0 = 'List[Double]'">
+			<xsl:text>double-list</xsl:text>
 		</xsl:when>
 		<xsl:when test="$type0 = 'Map[DoCOutputType,PrintStream]'">
 			<xsl:text>output-file</xsl:text>
@@ -197,7 +242,7 @@ SOFTWARE.
 			<xsl:text>string-list</xsl:text>
 		</xsl:when>
 		
-		<xsl:when test="$type0 = 'Set[String]' ">
+		<xsl:when test="$type0 = 'Set[String]' or $type0 = 'HashSet[String]' ">
 			<xsl:text>string-list</xsl:text>
 		</xsl:when>
 		
@@ -208,7 +253,7 @@ SOFTWARE.
 		<xsl:when test="$type0 = 'Set[Partition]'">
 			<xsl:text>enum-set</xsl:text>
 		</xsl:when>
-		<xsl:when test="$type0 = 'List[Type]'">
+		<xsl:when test="$type0 = 'List[Type]' or $type0 = 'List[ValidationType]'">
 			<xsl:text>enum-set</xsl:text>
 		</xsl:when>
 		
@@ -243,7 +288,15 @@ SOFTWARE.
 			<xsl:text>input-file</xsl:text>
 		</xsl:when>
 
-
+		<xsl:when test="$type0 = 'RodBinding[BeagleFeature]'">
+			<xsl:text>rod-files</xsl:text>
+		</xsl:when>
+		
+		<xsl:when test="$type0 = 'List[RodBindingCollection[VariantContext]]'">
+			<xsl:text>input-files</xsl:text>
+		</xsl:when>
+		
+		
 		
 		<xsl:otherwise>
 			<xsl:message terminate="yes">#### <xsl:value-of select="concat($programName,'/',$optName,'/',$type0)"/></xsl:message>
