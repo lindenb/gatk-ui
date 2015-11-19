@@ -198,3 +198,22 @@ clean:
 	rm -rf "${tmp.dir}"
 
 
+ifneq (${jnlp.dir},)
+
+.secret.keystore : 
+	keytool  -genkeypair -keystore $@ -alias secret \
+		-keypass "$(key.password)" -storepass "$(key.password)" \
+		-dname "CN=Pierre Lindenbaum, OU=INSERM, O=INSERM, L=Nantes, ST=Nantes, C=Fr"
+
+install.jnlp: ${this.dir}src/main/resources/images/splash.png \
+	${bin.dir}/gatk-ui.jar \
+	${this.dir}/src/main/resources/jnlp/gatk-ui.jnlp \
+	.secret.keystore
+	mkdir -p ${jnlp.dir}
+	cp ${bin.dir}/gatk-ui.jar ${this.dir}src/main/resources/images/splash.png ${jnlp.dir}
+	sed 's%__CODEBASE__%${jnlp.baseurl}%' ${this.dir}/src/main/resources/jnlp/gatk-ui.jnlp > ${jnlp.dir}/gatk-ui.jnlp
+	jarsigner  -keystore .secret.keystore  -storepass "$(key.password)" "${jnlp.dir}/gatk-ui.jar" secret
+
+
+endif
+

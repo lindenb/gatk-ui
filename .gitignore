@@ -12,3 +12,4 @@ programs.tmp.xml
 programs.tmp.xml.err
 src/main/resources/images/splash.png
 testdata/mutations.vcf.idx
+.secret.keystore
