@@ -6,6 +6,10 @@ Swing Interface for GATK
 $ make
 ```
 
+## Screenshot
+
+![Screenshot 1](doc/screenshot01.jpg)
+
 ## Author
 
 * Pierre Lindenbaum PhD
