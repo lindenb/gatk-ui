@@ -38,6 +38,13 @@
 	</xsl:choose>
 </xsl:attribute>
 
+<xsl:if test="$programName='GCContentByInterval' or
+			$programName='QualifyMissingIntervals'">
+<xsl:attribute name="require-interval">
+	<xsl:text>true</xsl:text>
+</xsl:attribute>
+</xsl:if>
+
 
 <xsl:comment>The MIT License (MIT)
 
@@ -68,8 +75,34 @@ SOFTWARE.
 						$programName='CountReads' or
 						$programName='CountLoci' or
 						$programName='CountReadEvents' or
-						$programName='CountMales' ">
-				<option opt="I" label="BAM list" type="input-files"  required="true">
+						$programName='CountMales'or
+						$programName='CountTerminusEvent' or
+						$programName='DiagnoseTargets' or
+						$programName='ErrorRatePerCycle' or
+						$programName='FindCoveredIntervals' or
+						$programName='FlagStat' or
+						$programName='Pileup' or
+						$programName='QualifyMissingIntervals' or
+						$programName='ReadClippingStats' or
+						$programName='ReadGroupProperties' or
+						$programName='ReadLengthDistribution'  or
+						$programName='BaseRecalibrator' or
+						$programName='ClipReads' or
+						$programName='IndelRealigner' or
+						$programName='LeftAlignIndels' or
+						$programName='PrintReads' or
+						$programName='ReadAdaptorTrimmer' or
+						$programName='RealignerTargetCreator' or
+						$programName='SplitNCigarReads' or
+						$programName='SplitSamFile'
+						">
+				<option opt="I" label="BAM list" required="true">
+					<xsl:attribute name="type">
+						 <xsl:choose>
+						 	<xsl:when test="$programName='SplitSamFile'">input-file</xsl:when>
+						 	<xsl:otherwise>input-files</xsl:otherwise>
+						 </xsl:choose> 
+					</xsl:attribute>
 					<description>Input Bam(s)</description>
 					<filter label="BAMS">
 						<extension indexed="true">bam</extension>
@@ -80,7 +113,14 @@ SOFTWARE.
 		<xsl:when test="$programName='SelectVariants' or
 						$programName='CountRODs' or
 						$programName='CountRODsByRef' or
-						$programName='CountIntervals'">
+						$programName='CountIntervals' or
+						$programName='CoveredByNSamplesSites' or
+						$programName='FastaStats' or
+						$programName='GCContentByInterval' or
+						$programName='PrintRODs' or
+						$programName='QCRef' or
+						$programName='SimulateReadsForVariants'
+						">
 		</xsl:when>
 		<xsl:when test="$programName='TODO'">
 				<option opt="I" label="VCF list" type="input-files"  required="true">
@@ -94,7 +134,7 @@ SOFTWARE.
 		</xsl:when>
 		<xsl:when test="$programName = 'CommandLineGATK' "></xsl:when>
 		<xsl:otherwise>
-			<xsl:message terminate="yes">Unknown walkertype <xsl:value-of select="concat(j:string[@name='walkertype'],':',$programName)"/></xsl:message>
+			<xsl:message terminate="yes">Unknown walker type <xsl:value-of select="concat(j:string[@name='walkertype'],':',$programName)"/></xsl:message>
 		</xsl:otherwise>
 	</xsl:choose>
 	<xsl:apply-templates select="j:array[@name='arguments']/j:object" mode="argument"/>
@@ -153,15 +193,15 @@ SOFTWARE.
 		<!-- <xsl:when test="$type0 = 'RodBinding[VariantContext]'">
 			<xsl:text>output-file</xsl:text>
 		</xsl:when> -->
-		<xsl:when test="$type0 = 'List[String]' or $type0 = 'ArrayList[String]'">
+		<xsl:when test="$type0 = 'List[String]' or $type0 = 'ArrayList[String]' or $type0 = 'String[]'">
 			<xsl:text>string-list</xsl:text>
 		</xsl:when>
 		
-		<xsl:when test="$type0 = 'Set[String]'">
+		<xsl:when test="$type0 = 'Set[String]' ">
 			<xsl:text>string-list</xsl:text>
 		</xsl:when>
 		
-		<xsl:when test="$type0 = 'Set[File]'">
+		<xsl:when test="$type0 = 'Set[File]' or $type0 = 'List[RodBinding[VariantContext]]'">
 			<xsl:text>input-files</xsl:text>
 		</xsl:when>
 		
@@ -187,9 +227,24 @@ SOFTWARE.
 		<xsl:when test="$type0 = 'RodBinding[VariantContext]'">
 			<xsl:text>input-file</xsl:text>
 		</xsl:when>
+		<xsl:when test="$type0 = 'RodBinding[Feature]'">
+			<xsl:text>input-file</xsl:text>
+		</xsl:when>
 		<xsl:when test="$type0 = 'List[RodBinding[Feature]]'">
 			<xsl:text>strings-or-files</xsl:text>
 		</xsl:when>
+		<xsl:when test="$type0 = 'GATKSAMFileWriter'">
+			<xsl:text>output-file</xsl:text>
+		</xsl:when>
+		<xsl:when test="$type0 = 'SAMFileWriter'">
+			<xsl:text>output-file</xsl:text>
+		</xsl:when>
+		<xsl:when test="$type0 = 'IntervalBinding[Feature]'">
+			<xsl:text>input-file</xsl:text>
+		</xsl:when>
+
+
+		
 		<xsl:otherwise>
 			<xsl:message terminate="yes">#### <xsl:value-of select="concat($programName,'/',$optName,'/',$type0)"/></xsl:message>
 			<xsl:text></xsl:text>
@@ -212,6 +267,11 @@ SOFTWARE.
 <xsl:attribute name="type">
 	<xsl:value-of select="$type"/>
 </xsl:attribute>
+
+
+
+
+
 
 <xsl:if test="$type0 = 'Set[Partition]'">
 	<xsl:attribute name="enum-class">org.broadinstitute.gatk.tools.walkers.coverage.DoCOutputType.Partition</xsl:attribute>
@@ -265,7 +325,18 @@ SOFTWARE.
 					($type0 = 'RodBinding[VariantContext]' and $type='output-file') ">
 			<extension>vcf</extension>
 		</xsl:when>
-		<xsl:when test="$type0 = 'RodBinding[VariantContext]' and $type='input-file'">
+		
+		
+		
+		<xsl:when test="($type0 = 'GATKSAMFileWriter') or ($type0 = 'SAMFileWriter')">
+			<extension>bam</extension>
+		</xsl:when>
+
+
+		
+		<xsl:when test="($type0 = 'RodBinding[VariantContext]' and $type='input-file') or
+						($type0 = 'List[RodBinding[VariantContext]]')
+						">
 			<filter label="Variant">
 				<extension>vcf</extension>
 				<extension>bcf</extension>
@@ -294,6 +365,7 @@ SOFTWARE.
 		</filter>
 	</xsl:if>
 	
+
 	
 	
 </option>

@@ -202,6 +202,7 @@ public class <xsl:value-of select="concat(@name,'Pane')"/> extends AbstractGatkU
 	public String canBuildCommandLine()
 		{
 		<xsl:apply-templates select="options/option" mode="can.build" />
+		
 		return super.canBuildCommandLine();
 		}
 
@@ -224,6 +225,15 @@ public class <xsl:value-of select="concat(@name,'Pane')"/> extends AbstractGatkU
 		{
 		<xsl:apply-templates select="options/option" mode="save.prefs" />
 		}
+	
+	<xsl:if test="@require-interval='true'">
+	@Override
+	public boolean isNonEmptyIntervalRequired()
+		{
+		return true;
+		}
+	</xsl:if>
+		
 	}
 </xsl:document>
 </xsl:template>

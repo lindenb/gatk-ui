@@ -85,7 +85,7 @@ public class StringsOrFilesChooser extends AbstractFilterChooser
 			@Override
 			public void actionPerformed(ActionEvent e)
 				{
-				JFileChooser chooser = new JFileChooser();
+				JFileChooser chooser = new JFileChooser(PreferredDirectory.get(null));
 				chooser.setMultiSelectionEnabled(true);
 				if(getFilter()!=null) chooser.setFileFilter(getFilter());
 				if(chooser.showOpenDialog(StringsOrFilesChooser.this)!=JFileChooser.APPROVE_OPTION) return;
@@ -93,6 +93,7 @@ public class StringsOrFilesChooser extends AbstractFilterChooser
 				for(File f: chooser.getSelectedFiles())
 					{
 					addStrings(new String[]{f.getPath()});
+					PreferredDirectory.update(f.getParentFile());
 					}
 				
 				}
@@ -119,7 +120,7 @@ public class StringsOrFilesChooser extends AbstractFilterChooser
 			public void actionPerformed(ActionEvent e) {
 				try
 					{
-					JFileChooser fc=new JFileChooser();
+					JFileChooser fc=new JFileChooser(PreferredDirectory.get(null));
 					if(fc.showSaveDialog(StringsOrFilesChooser.this)!=JFileChooser.APPROVE_OPTION)
 						{
 						return;
@@ -137,6 +138,7 @@ public class StringsOrFilesChooser extends AbstractFilterChooser
 						}
 					pw.flush();
 					pw.close();
+					PreferredDirectory.update(fs.getParentFile());
 					}
 				catch (Exception e2)
 					{

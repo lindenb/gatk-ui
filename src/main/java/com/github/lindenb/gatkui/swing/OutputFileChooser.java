@@ -18,6 +18,7 @@ public class OutputFileChooser extends AbstractFileChooser
 			{
 			return JFileChooser.CANCEL_OPTION;
 			}
+		PreferredDirectory.update(f.getParentFile());
 		return JFileChooser.APPROVE_OPTION;
 		}
 	}

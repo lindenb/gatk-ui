@@ -32,6 +32,9 @@ import java.awt.event.ActionEvent;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
 import java.io.File;
+import java.io.IOException;
+import java.io.OutputStream;
+import java.io.PrintStream;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashSet;
@@ -43,7 +46,6 @@ import javax.swing.JButton;
 import javax.swing.JCheckBox;
 import javax.swing.JComboBox;
 import javax.swing.JFrame;
-import javax.swing.JLabel;
 import javax.swing.JMenu;
 import javax.swing.JMenuBar;
 import javax.swing.JOptionPane;
@@ -56,8 +58,6 @@ import javax.swing.border.EmptyBorder;
 import javax.swing.border.TitledBorder;
 import javax.swing.text.Document;
 import javax.swing.text.JTextComponent;
-import javax.xml.stream.XMLOutputFactory;
-import javax.xml.stream.XMLStreamWriter;
 
 import org.apache.log4j.AppenderSkeleton;
 import org.apache.log4j.Logger;
@@ -69,10 +69,8 @@ import org.broadinstitute.gatk.utils.commandline.CommandLineUtils;
 
 import com.github.lindenb.gatkui.swing.AbstractFileChooser;
 import com.github.lindenb.gatkui.swing.EnumSetChooser;
-import com.github.lindenb.gatkui.swing.InputFileChooser;
 import com.github.lindenb.gatkui.swing.MultipleFileChooser;
 import com.github.lindenb.gatkui.swing.MultipleStringChooser;
-import com.github.lindenb.gatkui.swing.MyLayout;
 import com.github.lindenb.gatkui.swing.StringsOrFilesChooser;
 
 @SuppressWarnings("serial")
@@ -192,7 +190,8 @@ public abstract class AbstractGatkUi extends JFrame
 		 
 		 final JPanel contentPane=new JPanel(new BorderLayout(5,5));
 		 setContentPane(contentPane);
-		 this.tabbedPane = new JTabbedPane();
+		 this.tabbedPane = new JTabbedPane(JTabbedPane.TOP);
+		 this.tabbedPane.setTabLayoutPolicy(JTabbedPane.SCROLL_TAB_LAYOUT);
 		 this.tabbedPane.setBorder(new EmptyBorder(5, 5, 5, 5));
 
 		 contentPane.add(this.tabbedPane,BorderLayout.CENTER);
@@ -217,7 +216,40 @@ public abstract class AbstractGatkUi extends JFrame
 				logger.addAppender(appender);
 				//break;
 			 	}*/
-			 Logger.getRootLogger().addAppender(appender);
+		Logger.getRootLogger().addAppender(appender);
+		/* 
+		PrintStream redirectStream=new PrintStream(new OutputStream()
+			{
+			@Override
+			public void write(final int b) throws IOException {
+				if(b==-1) return;
+
+				try {
+					SwingUtilities.invokeLater(new Runnable()
+						{
+						@Override
+						public void run() {
+						
+						Document doc = logArea.getDocument();	
+						try
+							{
+							int L = doc.getLength();
+							if(L>10000) doc.remove(0, L);
+							L = doc.getLength();
+							doc.insertString(doc.getLength(),String.valueOf((char)b), null );
+							}
+						catch(Exception err)
+							{
+							}
+						}
+					});
+				} catch (Exception e2) {
+					}
+				}
+			});
+		System.setErr(redirectStream);
+		System.setOut(redirectStream);
+		*/
 		}
 	
 	protected void buildTabbedPane(JTabbedPane tabbedPane)
@@ -625,6 +657,12 @@ public <T extends Enum<T>>  void savePreference(EnumSetChooser<T> component,Stri
 				return getCommandName()+" requires a region. See tab 'GATK'";				
 				}
 			*/
+			
+			if( isNonEmptyIntervalRequired() &&
+				owner.getCommandLineGATKPane().getIntervalsOption().getStrings().isEmpty() )
+				{
+				return "The tool "+getCommandName()+" requires an interval defined in the CommandLineGATKPane tab.";	
+				}
 			return null;
 			}
 		
@@ -684,6 +722,12 @@ public <T extends Enum<T>>  void savePreference(EnumSetChooser<T> component,Stri
 					}
 				}
 			return s.replace('_', ' ');
+			}
+		
+		/** tells if interval (-L ) shouldn't be empty */
+		public boolean isNonEmptyIntervalRequired()
+			{
+			return false;
 			}
 		}
 	

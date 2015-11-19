@@ -32,10 +32,11 @@ public abstract class AbstractFileChooser
 					{
 					File file = getFile();
 					File dir=(file!=null?file.getParentFile():null);
-					JFileChooser chooser = new JFileChooser(dir);
+					JFileChooser chooser = new JFileChooser(PreferredDirectory.get(dir));
 					if(getFilter()!=null) chooser.setFileFilter(getFilter());
 					if(select(chooser)!=JFileChooser.APPROVE_OPTION) return;
 					if(chooser.getSelectedFile()==null) return;
+					PreferredDirectory.update(chooser.getSelectedFile().getParentFile());
 					setText(chooser.getSelectedFile().getPath());
 					}
 				}));

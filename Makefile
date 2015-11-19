@@ -35,7 +35,31 @@ gatk.docs =	org_broadinstitute_gatk_engine_CommandLineGATK \
 		org_broadinstitute_gatk_tools_walkers_qc_CountRODs \
 		org_broadinstitute_gatk_tools_walkers_qc_CountRODsByRef \
 		org_broadinstitute_gatk_tools_walkers_qc_CountReadEvents \
-
+		org_broadinstitute_gatk_tools_walkers_qc_CountTerminusEvent \
+		org_broadinstitute_gatk_tools_walkers_diagnostics_CoveredByNSamplesSites \
+		org_broadinstitute_gatk_tools_walkers_diagnostics_diagnosetargets_DiagnoseTargets \
+		org_broadinstitute_gatk_tools_walkers_diagnostics_ErrorRatePerCycle \
+		org_broadinstitute_gatk_tools_walkers_fasta_FastaStats \
+		org_broadinstitute_gatk_tools_walkers_diagnostics_FindCoveredIntervals \
+		org_broadinstitute_gatk_tools_walkers_qc_FlagStat \
+		org_broadinstitute_gatk_tools_walkers_coverage_GCContentByInterval \
+		org_broadinstitute_gatk_tools_walkers_qc_Pileup \
+		org_broadinstitute_gatk_tools_walkers_qc_PrintRODs \
+		org_broadinstitute_gatk_tools_walkers_qc_QCRef \
+		org_broadinstitute_gatk_tools_walkers_diagnostics_missing_QualifyMissingIntervals \
+		org_broadinstitute_gatk_tools_walkers_qc_ReadClippingStats \
+		org_broadinstitute_gatk_tools_walkers_diagnostics_ReadGroupProperties \
+		org_broadinstitute_gatk_tools_walkers_diagnostics_ReadLengthDistribution \
+		org_broadinstitute_gatk_tools_walkers_simulatereads_SimulateReadsForVariants \
+		org_broadinstitute_gatk_tools_walkers_bqsr_BaseRecalibrator \
+		org_broadinstitute_gatk_tools_walkers_readutils_ClipReads \
+		org_broadinstitute_gatk_tools_walkers_indels_IndelRealigner \
+		org_broadinstitute_gatk_tools_walkers_indels_LeftAlignIndels \
+		org_broadinstitute_gatk_tools_walkers_readutils_PrintReads \
+		org_broadinstitute_gatk_tools_walkers_readutils_ReadAdaptorTrimmer \
+		org_broadinstitute_gatk_tools_walkers_indels_RealignerTargetCreator \
+		org_broadinstitute_gatk_tools_walkers_rnaseq_SplitNCigarReads \
+		org_broadinstitute_gatk_tools_walkers_readutils_SplitSamFile \
 
 define make_gatk_pane
 
@@ -111,7 +135,7 @@ ${this.dir}src/main/generated-code/java/com/github/lindenb/gatkui/AbstractGatkPr
 	mkdir -p $(dir $@) ${this.dir}src/main/generated-code/xml
 	echo '<?xml version="1.0" encoding="UTF-8"?>' >  ${this.dir}src/main/generated-code/xml//programs.xml
 	echo '<programs xmlns:xi="http://www.w3.org/2001/XInclude">' >>  ${this.dir}src/main/generated-code/xml//programs.xml
-	$(foreach U,${gatk.docs}, echo '<xi:include href="$(lastword $(subst _, ,${U})).xml"/>' >>  ${this.dir}src/main/generated-code/xml/programs.xml ;  )
+	echo '$(foreach U,${gatk.docs},$(lastword $(subst _, ,${U} )))' | tr " " "\n" | grep -v '^$$' | awk '{printf("<xi:include href=\"%s.xml\"/>\n",$$0);}' >>  ${this.dir}src/main/generated-code/xml/programs.xml 
 	echo '</programs>' >>  ${this.dir}src/main/generated-code/xml/programs.xml
 	xsltproc --xinclude --path "${this.dir}src/main/generated-code/xml" -o "$(addsuffix .tmp.xml,$@)" ${this.dir}src/main/resources/xsl/commandpreproc.xsl src/main/resources/xml/programs.xml
 	xsltproc --stringparam outdir "$(dir $@)" -o $@ ${this.dir}src/main/resources/xsl/programs2java.xsl "$(addsuffix .tmp.xml,$@)"

@@ -97,7 +97,7 @@ public class MultipleFileChooser extends AbstractFilterChooser
 			public void actionPerformed(ActionEvent e) {
 				try
 					{
-					JFileChooser fc=new JFileChooser();
+					JFileChooser fc=new JFileChooser(PreferredDirectory.get(null));
 					if(fc.showSaveDialog(MultipleFileChooser.this)!=JFileChooser.APPROVE_OPTION)
 						{
 						return;
@@ -115,6 +115,7 @@ public class MultipleFileChooser extends AbstractFilterChooser
 						}
 					pw.flush();
 					pw.close();
+					PreferredDirectory.update(fs.getParentFile());
 					}
 				catch (Exception e2)
 					{
