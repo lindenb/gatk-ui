@@ -1,4 +1,4 @@
-.PHONY:all clean run
+.PHONY:all clean run jnlp
 SHELL=/bin/bash
 this.makefile=$(lastword $(MAKEFILE_LIST))
 this.dir=$(dir $(realpath ${this.makefile}))
@@ -200,12 +200,22 @@ clean:
 
 ifneq (${jnlp.dir},)
 
+
+
+
+$(if ${jnlp.dir},$(if ${key.password},,$(warning ---------------------- UNDEFINED $${key.password})))
+$(if ${jnlp.dir},$(if ${jnlp.baseurl},,$(warning  ---------------------- UNDEFINED $${jnlp.baseurl})))
+
+key.password?=mysecret
+jnlp.baseurl?=http://localhost/gatkui/
+
 .secret.keystore : 
 	keytool  -genkeypair -keystore $@ -alias secret \
 		-keypass "$(key.password)" -storepass "$(key.password)" \
 		-dname "CN=Pierre Lindenbaum, OU=INSERM, O=INSERM, L=Nantes, ST=Nantes, C=Fr"
 
-install.jnlp: ${this.dir}src/main/resources/images/splash.png \
+
+jnlp: ${this.dir}src/main/resources/images/splash.png \
 	${bin.dir}/gatk-ui.jar \
 	${this.dir}/src/main/resources/jnlp/gatk-ui.jnlp \
 	.secret.keystore
@@ -213,7 +223,13 @@ install.jnlp: ${this.dir}src/main/resources/images/splash.png \
 	cp ${bin.dir}/gatk-ui.jar ${this.dir}src/main/resources/images/splash.png ${jnlp.dir}
 	sed 's%__CODEBASE__%${jnlp.baseurl}%' ${this.dir}/src/main/resources/jnlp/gatk-ui.jnlp > ${jnlp.dir}/gatk-ui.jnlp
 	jarsigner  -keystore .secret.keystore  -storepass "$(key.password)" "${jnlp.dir}/gatk-ui.jar" secret
+	chmod 755 ${jnlp.dir} ${jnlp.dir}/gatk-ui.jnlp ${jnlp.dir}/gatk-ui.jar ${jnlp.dir}/splash.png
 
+
+else
+
+jnlp:
+	echo "$${jnlp.dir} was not defined in local.mk"
 
 endif
 
