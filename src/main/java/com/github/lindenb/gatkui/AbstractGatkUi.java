@@ -32,6 +32,9 @@ import java.awt.event.ActionEvent;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
 import java.io.File;
+import java.io.IOException;
+import java.io.OutputStream;
+import java.io.PrintStream;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashSet;
@@ -80,9 +83,6 @@ public abstract class AbstractGatkUi extends JFrame
 	protected static final Logger LOG = CommandLineUtils.getStingLogger();
 	protected Preferences _preferences = null;
 	private JTextComponent logArea;
-	//protected InputFileChooser REFFileChooser;
-	//protected InputFileChooser captureFileOrRegionChooser;
-	//protected InputFileChooser pedigreeFileChooser;
 	private JTabbedPane tabbedPane=null;
 	JMenu engineMenu;
 	
@@ -205,7 +205,7 @@ public abstract class AbstractGatkUi extends JFrame
 		 JScrollPane scroll = new JScrollPane(logArea);
 		 logPane.add(scroll,BorderLayout.CENTER);
 		 
-			final SwingAppender appender = new SwingAppender(this.logArea);
+	final SwingAppender appender = new SwingAppender(this.logArea);
 			/*
 			 for (	Logger logger = LOG;
 					 logger != null;
@@ -215,13 +215,11 @@ public abstract class AbstractGatkUi extends JFrame
 				//break;
 			 	}*/
 		Logger.getRootLogger().addAppender(appender);
-		/* 
-		PrintStream redirectStream=new PrintStream(new OutputStream()
+		
+	final PrintStream redirectStream=new PrintStream(new ConsolePrintStream()
 			{
 			@Override
-			public void write(final int b) throws IOException {
-				if(b==-1) return;
-
+			public void writeToDevice(final String textToPrint) {
 				try {
 					SwingUtilities.invokeLater(new Runnable()
 						{
@@ -234,7 +232,7 @@ public abstract class AbstractGatkUi extends JFrame
 							int L = doc.getLength();
 							if(L>10000) doc.remove(0, L);
 							L = doc.getLength();
-							doc.insertString(doc.getLength(),String.valueOf((char)b), null );
+							doc.insertString(doc.getLength(),textToPrint, null );
 							}
 						catch(Exception err)
 							{
@@ -245,9 +243,15 @@ public abstract class AbstractGatkUi extends JFrame
 					}
 				}
 			});
-		System.setErr(redirectStream);
-		System.setOut(redirectStream);
-		*/
+		this.addWindowListener(new WindowAdapter()
+			{
+			@Override
+			public void windowOpened(WindowEvent e) {
+				System.setErr(redirectStream);
+				System.setOut(redirectStream);
+				removeWindowListener(this);
+				}
+			});		
 		}
 	
 	protected void buildTabbedPane(JTabbedPane tabbedPane)
@@ -851,5 +855,25 @@ public <T extends Enum<T>>  void savePreference(EnumSetChooser<T> component,Stri
 			}
 		}
 	
+	private static class ConsolePrintStream extends OutputStream
+		{
+		private StringBuilder buffer= new StringBuilder();
+		@Override
+		public void write(int b) throws IOException {
+			if(b==-1) flush();
+			buffer.append((char)b);
+			if(b=='\n' || buffer.length()>1000) flush();
+			}
+		@Override
+		public void flush() throws IOException {
+			if(buffer.length()==0) return;
+			writeToDevice(buffer.toString());
+			buffer.setLength(0);
+			}
+		public void writeToDevice(String s)
+			{
+			
+			}
+		}
 	
 	}

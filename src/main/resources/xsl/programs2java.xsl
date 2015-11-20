@@ -154,6 +154,7 @@ public class <xsl:value-of select="concat(@name,'Pane')"/> extends AbstractGatkU
 		pane.setBorder(new javax.swing.border.EmptyBorder(15, 15, 15, 15));
 
 		<xsl:apply-templates select="options/option[@required='true']" />
+		pane.add(new javax.swing.JSeparator(javax.swing. SwingConstants.HORIZONTAL));
 		<xsl:apply-templates select="options/option[not(@required='true')]" />
 		
 		JScrollPane scroll = new JScrollPane(pane);
