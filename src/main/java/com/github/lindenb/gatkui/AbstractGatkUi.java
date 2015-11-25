@@ -113,7 +113,7 @@ public abstract class AbstractGatkUi extends JFrame
 
 					if(!tc.isVisible())
 						{
-						System.err.println(logString);
+						//System.err.println(logString);
 						return;
 						}
 					Document doc = tc.getDocument();	
@@ -131,7 +131,7 @@ public abstract class AbstractGatkUi extends JFrame
 					}
 				});
 			} catch (Exception e2) {
-				System.err.println("Cannot log");
+				//System.err.println("Cannot log");
 				}
 			}
 
