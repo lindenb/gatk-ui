@@ -222,7 +222,8 @@ jnlp: ${this.dir}src/main/resources/images/splash.png \
 	mkdir -p ${jnlp.dir}
 	cp ${bin.dir}/gatk-ui.jar ${this.dir}src/main/resources/images/splash.png ${jnlp.dir}
 	sed 's%__CODEBASE__%${jnlp.baseurl}%' ${this.dir}/src/main/resources/jnlp/gatk-ui.jnlp > ${jnlp.dir}/gatk-ui.jnlp
-	jarsigner  -keystore .secret.keystore  -storepass "$(key.password)" "${jnlp.dir}/gatk-ui.jar" secret
+	# http://stackoverflow.com/questions/21695520
+	jarsigner -tsa http://timestamp.digicert.com -keystore .secret.keystore  -storepass "$(key.password)" "${jnlp.dir}/gatk-ui.jar" secret
 	chmod 755 ${jnlp.dir} ${jnlp.dir}/gatk-ui.jnlp ${jnlp.dir}/gatk-ui.jar ${jnlp.dir}/splash.png
 
 
