@@ -61,7 +61,6 @@ each web page is associated to a structured **JSON** page https://www.broadinsti
     }
   ],
   "activeregion": {},
-(....)
 ```
 This json is transformed to XML in order to process it with **XSLT** . A XSLT stylesheet generates some java code
 
