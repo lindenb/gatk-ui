@@ -6,6 +6,12 @@ Java Swing Interface for the Genome Analysis Toolkit (GATK) https://www.broadins
 
 ## Compilation
 
+Requirements:
+
+   * GNU make >= 3.81
+   * java JDK 1.7
+   * xsltproc
+
 Tested with **GATK 3.3** .
 
 Create a new file `local.mk` (in the `Makefile` directory) containing a property **gatk.jar** defining the path to the GATK jar.
