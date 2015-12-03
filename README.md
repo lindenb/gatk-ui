@@ -41,6 +41,11 @@ $ java -jar path/to/gatk-ui/dist/gatk-ui.jar
 
 ## Questions
 
+## Why did you create this tool ?
+
+Some non-bioinformatician collaborators often want some coverage data for a defined set of BAM, for a specific region...
+
+
 ## Did you test every tool ?
 
 NO
