@@ -95,6 +95,10 @@ $ make jnlp
 
 The application will be available at ${jnlp.baseurl}/gatk-ui.jnlp
 
+## History
+
+* 2015-12-26: removed some deprecated tools.
+
 
 ## Author
 

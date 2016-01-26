@@ -25,6 +25,17 @@ ifeq ($(gatk.jar),)
 $(error variable gatk.jar is not defined)
 endif
 
+deprecated.docs= \
+		org_broadinstitute_gatk_tools_walkers_diagnostics_CoveredByNSamplesSites \
+		org_broadinstitute_gatk_tools_walkers_readutils_ReadAdaptorTrimmer \
+		org_broadinstitute_gatk_tools_walkers_beagle_BeagleOutputToVCF \
+		org_broadinstitute_gatk_tools_walkers_beagle_ProduceBeagleInput \
+		org_broadinstitute_gatk_tools_walkers_beagle_VariantsToBeagleUnphased \
+		org_broadinstitute_gatk_tools_walkers_variantutils_FilterLiftedVariants \
+		org_broadinstitute_gatk_tools_walkers_variantutils_LiftoverVariants \
+		org_broadinstitute_gatk_tools_ListAnnotations \
+		org_broadinstitute_gatk_tools_walkers_variantutils_VariantValidationAssessor 
+
 gatk.docs =	org_broadinstitute_gatk_engine_CommandLineGATK \
 		org_broadinstitute_gatk_tools_walkers_coverage_DepthOfCoverage \
 		org_broadinstitute_gatk_tools_walkers_variantutils_SelectVariants \
@@ -36,7 +47,6 @@ gatk.docs =	org_broadinstitute_gatk_engine_CommandLineGATK \
 		org_broadinstitute_gatk_tools_walkers_qc_CountRODsByRef \
 		org_broadinstitute_gatk_tools_walkers_qc_CountReadEvents \
 		org_broadinstitute_gatk_tools_walkers_qc_CountTerminusEvent \
-		org_broadinstitute_gatk_tools_walkers_diagnostics_CoveredByNSamplesSites \
 		org_broadinstitute_gatk_tools_walkers_diagnostics_diagnosetargets_DiagnoseTargets \
 		org_broadinstitute_gatk_tools_walkers_diagnostics_ErrorRatePerCycle \
 		org_broadinstitute_gatk_tools_walkers_fasta_FastaStats \
@@ -56,30 +66,24 @@ gatk.docs =	org_broadinstitute_gatk_engine_CommandLineGATK \
 		org_broadinstitute_gatk_tools_walkers_indels_IndelRealigner \
 		org_broadinstitute_gatk_tools_walkers_indels_LeftAlignIndels \
 		org_broadinstitute_gatk_tools_walkers_readutils_PrintReads \
-		org_broadinstitute_gatk_tools_walkers_readutils_ReadAdaptorTrimmer \
 		org_broadinstitute_gatk_tools_walkers_indels_RealignerTargetCreator \
 		org_broadinstitute_gatk_tools_walkers_rnaseq_SplitNCigarReads \
 		org_broadinstitute_gatk_tools_walkers_readutils_SplitSamFile \
 		\
 		org_broadinstitute_gatk_tools_walkers_variantrecalibration_ApplyRecalibration \
-		org_broadinstitute_gatk_tools_walkers_beagle_BeagleOutputToVCF \
 		org_broadinstitute_gatk_tools_walkers_variantutils_GenotypeGVCFs \
 		org_broadinstitute_gatk_tools_walkers_haplotypecaller_HaplotypeCaller \
 		org_broadinstitute_gatk_tools_walkers_phasing_PhaseByTransmission \
-		org_broadinstitute_gatk_tools_walkers_beagle_ProduceBeagleInput \
 		org_broadinstitute_gatk_tools_walkers_phasing_ReadBackedPhasing \
 		org_broadinstitute_gatk_tools_walkers_genotyper_UnifiedGenotyper \
 		org_broadinstitute_gatk_tools_walkers_variantrecalibration_VariantRecalibrator \
-		org_broadinstitute_gatk_tools_walkers_beagle_VariantsToBeagleUnphased \
 		org_broadinstitute_gatk_tools_walkers_variantutils_CalculateGenotypePosteriors \
 		org_broadinstitute_gatk_tools_CatVariants \
 		org_broadinstitute_gatk_tools_walkers_variantutils_CombineGVCFs \
 		org_broadinstitute_gatk_tools_walkers_variantutils_CombineVariants \
-		org_broadinstitute_gatk_tools_walkers_variantutils_FilterLiftedVariants \
 		org_broadinstitute_gatk_tools_walkers_variantutils_GenotypeConcordance \
 		org_broadinstitute_gatk_tools_walkers_haplotypecaller_HaplotypeResolver \
 		org_broadinstitute_gatk_tools_walkers_variantutils_LeftAlignAndTrimVariants \
-		org_broadinstitute_gatk_tools_walkers_variantutils_LiftoverVariants \
 		org_broadinstitute_gatk_tools_walkers_variantutils_RandomlySplitVariants \
 		org_broadinstitute_gatk_tools_walkers_variantutils_RegenotypeVariants \
 		org_broadinstitute_gatk_tools_walkers_variantutils_SelectHeaders \
@@ -90,13 +94,11 @@ gatk.docs =	org_broadinstitute_gatk_engine_CommandLineGATK \
 		org_broadinstitute_gatk_tools_walkers_variantutils_VariantsToBinaryPed \
 		org_broadinstitute_gatk_tools_walkers_variantutils_VariantsToTable \
 		org_broadinstitute_gatk_tools_walkers_variantutils_VariantsToVCF \
-		org_broadinstitute_gatk_tools_ListAnnotations \
 		org_broadinstitute_gatk_tools_walkers_fasta_FastaAlternateReferenceMaker \
 		org_broadinstitute_gatk_tools_walkers_fasta_FastaReferenceMaker \
 		org_broadinstitute_gatk_tools_walkers_validation_GenotypeAndValidate \
 		org_broadinstitute_gatk_tools_walkers_variantutils_ValidateVariants \
 		org_broadinstitute_gatk_tools_walkers_validation_validationsiteselector_ValidationSiteSelector \
-		org_broadinstitute_gatk_tools_walkers_variantutils_VariantValidationAssessor \
 		org_broadinstitute_gatk_tools_walkers_haplotypecaller_HCMappingQualityFilter 
 
 
@@ -112,6 +114,7 @@ $${this.dir}src/main/generated-code/xml/$$(lastword $$(subst _, ,$(1))).jsonx : 
 		$${this.dir}src/main/generated-code/json/$$(lastword $$(subst _, ,$(1))).json \
 		$${bin.dir}/json2xml.jar
 	mkdir -p $$(dir $$@)
+	echo "#converting $$< to xml. If this fails, it could mean that the tool is deprecated and has been removed from GATK. Remove '$(1)' from the Makefile variable \$$$${gatk.docs}"
 	$${JAVA} -jar $${bin.dir}/json2xml.jar $$< | xmllint -o "$$(addsuffix .tmp,$$@)" --format -
 	mv $$(addsuffix .tmp,$$@) $$@
 	
